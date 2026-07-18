@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["import", "typescript", "unicorn"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "env": {
+    "node": true
+  },
+  "ignorePatterns": ["**/dist", "**/node_modules", "packages/cli/templates"],
+  "overrides": [
+    {
+      "files": ["packages/cli/src/**/*.ts"],
+      "rules": {
+        "no-restricted-globals": [
+          "error",
+          {
+            "name": "Bun",
+            "message": "The CLI must stay Node-compatible (npx consumers). Spawn bun as a child process instead."
+          }
+        ]
+      }
+    }
+  ]
+}

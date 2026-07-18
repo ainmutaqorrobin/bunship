@@ -1,0 +1,31 @@
+{
+  "name": "create-scaffolder",
+  "version": "0.1.0",
+  "description": "Scaffold production-ready Bun monorepos using official framework scaffolders",
+  "license": "MIT",
+  "bin": {
+    "create-scaffolder": "./dist/index.mjs"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "bun src/index.ts",
+    "build": "tsdown && node dist/index.mjs --selftest",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@clack/prompts": "^1.7.0",
+    "@types/bun": "^1.3.14",
+    "@types/node": "^20",
+    "commander": "^14.0.0",
+    "tsdown": "^0.22.9",
+    "unrun": "^0.3.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
