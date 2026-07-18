@@ -2,7 +2,7 @@ import type { ProjectConfig, StackId } from '../config/schema';
 import type { Reporter } from '../reporter/types';
 
 /** Declarative contributions an adapter makes to root-level files (aggregated by steps). */
-export interface ToolingFragment {
+interface ToolingFragment {
   oxlintPlugins?: string[];
   /** Rule overrides merged into the generated .oxlintrc.json `rules` object. */
   oxlintRules?: Record<string, unknown>;
@@ -15,7 +15,7 @@ export interface ToolingFragment {
   formatExtensions?: string[];
 }
 
-export interface DockerSpec {
+interface DockerSpec {
   /** Filename inside templates/docker/. */
   template: string;
   containerPort: number;

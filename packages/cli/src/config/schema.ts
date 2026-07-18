@@ -3,7 +3,7 @@ export type MobileStack = 'expo';
 export type ApiStack = 'nest' | 'express' | 'hono' | 'fastify';
 export type StackId = WebStack | MobileStack | ApiStack;
 
-export interface StackSelection {
+interface StackSelection {
   web: WebStack | null;
   mobile: MobileStack | null;
   api: ApiStack | null;
