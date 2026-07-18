@@ -1,5 +1,27 @@
+import { existsSync, realpathSync } from 'node:fs';
 import { chmod, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
+
+/**
+ * Expand Windows 8.3 short paths (AINMU~1.ROB) to their long form. Mixing the two
+ * spellings makes bun record machine-specific relative workspace paths in bun.lock.
+ * Works for not-yet-existing targets by realpathing the nearest existing ancestor.
+ */
+export function canonicalizePath(path: string): string {
+  const missing: string[] = [];
+  let current = path;
+  while (!existsSync(current)) {
+    missing.unshift(basename(current));
+    const parent = dirname(current);
+    if (parent === current) return path;
+    current = parent;
+  }
+  try {
+    return join(realpathSync.native(current), ...missing);
+  } catch {
+    return path;
+  }
+}
 
 export async function ensureDir(dir: string): Promise<void> {
   await mkdir(dir, { recursive: true });

@@ -2,6 +2,7 @@ import { basename, resolve as resolvePath } from 'node:path';
 
 import { BIN_NAME } from '../branding';
 import { UsageError } from '../errors';
+import { canonicalizePath } from '../fsx';
 import { collectInteractive } from '../prompts';
 import {
   type ApiStack,
@@ -95,7 +96,7 @@ export async function resolveConfig(
   }
   if (cicd) docker = true;
 
-  const targetDir = resolvePath(process.cwd(), dir ?? '.');
+  const targetDir = canonicalizePath(resolvePath(process.cwd(), dir ?? '.'));
   const projectName = (flags.name ?? basename(targetDir)).toLowerCase();
 
   const cfg: ProjectConfig = {

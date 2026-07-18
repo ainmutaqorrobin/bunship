@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 
 import { exec } from '../exec';
-import { ensureDir, writeFileLf } from '../fsx';
+import { ensureDir, readJson, writeFileLf, writeJson } from '../fsx';
 import { patchFileOrWarn } from './shared';
 import type { StackAdapter } from './types';
 
@@ -48,6 +48,13 @@ export const nest: StackAdapter = {
     );
   },
   async postProcess(ctx) {
+    // Monorepo convention: app-level `start` is the PRODUCTION start (the Docker CMD
+    // runs `node --run start`); the template's `nest start` needs the dev-only CLI.
+    const pkgPath = join(ctx.appDir, 'package.json');
+    const pkg = await readJson<{ scripts?: Record<string, string> }>(pkgPath);
+    pkg.scripts = { ...pkg.scripts, start: 'node dist/main.js' };
+    await writeJson(pkgPath, pkg);
+
     await patchFileOrWarn(
       ctx,
       'src/main.ts',
