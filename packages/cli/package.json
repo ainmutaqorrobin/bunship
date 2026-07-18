@@ -2,7 +2,33 @@
   "name": "create-bunship",
   "version": "0.1.0",
   "description": "Scaffold and ship production-ready Bun monorepos using official framework scaffolders",
+  "keywords": [
+    "bun",
+    "ci-cd",
+    "cli",
+    "create",
+    "docker",
+    "expo",
+    "fastify",
+    "hono",
+    "monorepo",
+    "nestjs",
+    "nextjs",
+    "nuxt",
+    "scaffold",
+    "vite"
+  ],
+  "homepage": "https://github.com/ainmutaqorrobin/bunship#readme",
+  "bugs": {
+    "url": "https://github.com/ainmutaqorrobin/bunship/issues"
+  },
   "license": "MIT",
+  "author": "ainmutaqorrobin <ainmutaqorrobin@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ainmutaqorrobin/bunship.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "create-bunship": "./dist/index.mjs"
   },
@@ -15,7 +41,8 @@
     "dev": "bun src/index.ts",
     "build": "tsdown && node dist/index.mjs --selftest",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "prepublishOnly": "bun run build && bun test"
   },
   "devDependencies": {
     "@clack/prompts": "^1.7.0",
