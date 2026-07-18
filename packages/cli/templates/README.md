@@ -1,14 +1,14 @@
 # Templates
 
 Static files copied (and `{{var}}`-rendered for `.tpl` files) into generated projects.
+Root-level configs (package.json, oxc/knip configs, hooks, READMEs) are generated
+programmatically by the tooling step — only genuinely static content lives here.
 
-| Dir       | Contents                                                                             |
-| --------- | ------------------------------------------------------------------------------------ |
-| `root/`   | Generated repo root: package.json, oxc/knip configs, husky hooks, .vscode, gitignore |
-| `docker/` | Dockerfile templates per runtime model + compose.yaml                                |
-| `deploy/` | VPS deploy bundle: compose (image-based), nginx confs, env example, bootstrap README |
-| `github/` | GitHub Actions workflow templates (ci.yml, deploy.yml)                               |
-| `stacks/` | Internal app templates (express) + per-stack patch files (e.g. next.config.ts)       |
+| Dir       | Contents                                                                                             |
+| --------- | ---------------------------------------------------------------------------------------------------- |
+| `docker/` | Dockerfile per runtime model (next standalone, node-api, bun-api, nuxt, vite+nginx) + SPA nginx conf |
+| `deploy/` | VPS bundle sources: nginx reverse-proxy configs, bootstrap README                                    |
+| `stacks/` | Internal app templates (express) + per-stack patch files (next.config.ts, hono entry)                |
 
-These files are shipped in the npm package (`files: ["dist", "templates"]`) and resolved
+These files ship in the npm package (`files: ["dist", "templates"]`) and are resolved
 relative to the module at runtime — never from `process.cwd()`.

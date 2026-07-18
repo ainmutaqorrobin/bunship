@@ -1,8 +1,8 @@
-import { join } from 'node:path';
+﻿import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { ensureDir, readJson, writeFileLf, writeJson } from '../fsx';
-import { patchFileOrWarn } from './shared';
+import { patchFileOrWarn, resolvePin } from './shared';
 import type { StackAdapter } from './types';
 
 const PIN = '@nestjs/cli@11';
@@ -33,7 +33,7 @@ export const nest: StackAdapter = {
     await exec(
       'bunx',
       [
-        PIN,
+        resolvePin(PIN),
         'new',
         ctx.appDir.split(/[\\/]/).pop() ?? 'api',
         '--skip-git',

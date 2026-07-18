@@ -18,7 +18,6 @@ jobs:
       - run: bun run format:check
       - run: bun run typecheck
       - run: bun run knip
-      - run: bun test
 
   build:
     strategy:
@@ -36,3 +35,5 @@ jobs:
           node-version: 20
       - run: bun install --frozen-lockfile
       - run: bun run build
+      # After build on purpose: the smoke e2e runs `node dist/index.mjs` — the npx path.
+      - run: bun test

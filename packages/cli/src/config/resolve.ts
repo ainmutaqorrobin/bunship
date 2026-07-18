@@ -82,11 +82,11 @@ export async function resolveConfig(
       docker ??= YES_DEFAULTS.docker;
       cicd ??= YES_DEFAULTS.cicd;
     } else {
-      // Strict agent mode: anything not stated is off.
+      // Strict agent mode: anything not stated is off (docker resolves below,
+      // AFTER the cicd implication — `--cicd` alone must imply docker, not conflict).
       web ??= null;
       mobile ??= null;
       api ??= null;
-      docker ??= false;
       cicd ??= false;
     }
   }
@@ -95,6 +95,7 @@ export async function resolveConfig(
     throw new UsageError('--cicd requires Docker; drop --no-docker or drop --cicd.');
   }
   if (cicd) docker = true;
+  docker ??= false;
 
   const targetDir = canonicalizePath(resolvePath(process.cwd(), dir ?? '.'));
   const projectName = (flags.name ?? basename(targetDir)).toLowerCase();

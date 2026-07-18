@@ -4,6 +4,16 @@ import { join } from 'node:path';
 import { pathExists, readJson, rimraf, writeFileLf, writeJson } from '../fsx';
 import type { AppCtx, StackAdapter } from './types';
 
+/**
+ * SCAFFOLDER_CANARY=1 strips version pins (the nightly drift-canary runs the whole
+ * matrix against @latest scaffolders so flag changes are caught before users hit them).
+ */
+export function resolvePin(pin: string): string {
+  if (process.env.SCAFFOLDER_CANARY !== '1') return pin;
+  const at = pin.lastIndexOf('@');
+  return at > 0 ? pin.slice(0, at) : pin;
+}
+
 // Scaffolder residue that must never survive inside a workspace app.
 const JUNK = [
   '.git',

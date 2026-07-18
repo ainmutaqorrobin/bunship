@@ -1,7 +1,8 @@
-import { join } from 'node:path';
+﻿import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { copyTemplate } from '../template';
+import { resolvePin } from './shared';
 import type { StackAdapter } from './types';
 
 const PIN = 'create-next-app@16';
@@ -18,7 +19,7 @@ export const next: StackAdapter = {
     await exec(
       'bunx',
       [
-        PIN,
+        resolvePin(PIN),
         'web',
         '--ts',
         '--tailwind',

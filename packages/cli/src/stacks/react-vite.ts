@@ -1,6 +1,7 @@
-import { join } from 'node:path';
+﻿import { join } from 'node:path';
 
 import { exec } from '../exec';
+import { resolvePin } from './shared';
 import type { StackAdapter } from './types';
 
 const PIN = 'create-vite@9';
@@ -15,7 +16,7 @@ export const reactVite: StackAdapter = {
   async scaffold(ctx) {
     // create-vite sanitizes absolute Windows paths into a folder NAME — always pass
     // a relative dir with cwd=apps/.
-    await exec('bunx', [PIN, 'web', '--template', 'react-ts', '--no-interactive'], {
+    await exec('bunx', [resolvePin(PIN), 'web', '--template', 'react-ts', '--no-interactive'], {
       cwd: join(ctx.root, 'apps'),
       verbose: ctx.verbose,
     });

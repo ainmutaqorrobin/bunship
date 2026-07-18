@@ -1,7 +1,8 @@
-import { join } from 'node:path';
+﻿import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { readJson, writeJson } from '../fsx';
+import { resolvePin } from './shared';
 import type { StackAdapter } from './types';
 
 const PIN = 'create-nuxt@3';
@@ -18,7 +19,7 @@ export const nuxt: StackAdapter = {
     await exec(
       'bunx',
       [
-        PIN,
+        resolvePin(PIN),
         'web',
         '--template',
         'minimal',

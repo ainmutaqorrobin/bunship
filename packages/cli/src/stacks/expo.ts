@@ -1,7 +1,8 @@
-import { join } from 'node:path';
+﻿import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { writeFileLf } from '../fsx';
+import { resolvePin } from './shared';
 import type { StackAdapter } from './types';
 
 const PIN = 'create-expo-app@4';
@@ -26,7 +27,15 @@ export const expo: StackAdapter = {
     // nested .git it always creates.
     await exec(
       'bunx',
-      [PIN, 'mobile', '--template', 'default', '--yes', '--no-install', '--no-agents-md'],
+      [
+        resolvePin(PIN),
+        'mobile',
+        '--template',
+        'default',
+        '--yes',
+        '--no-install',
+        '--no-agents-md',
+      ],
       { cwd: join(ctx.root, 'apps'), verbose: ctx.verbose },
     );
   },

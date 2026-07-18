@@ -1,8 +1,9 @@
-import { join } from 'node:path';
+﻿import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { readJson, writeJson } from '../fsx';
 import { copyTemplate } from '../template';
+import { resolvePin } from './shared';
 import type { StackAdapter } from './types';
 
 const PIN = 'create-hono@0.19';
@@ -18,7 +19,7 @@ export const hono: StackAdapter = {
     // --install is required for non-interactive use: without it create-hono prompts
     // ("install dependencies?") and, with closed stdin, exits 0 leaving an EMPTY dir.
     // The universal cleanup removes the app-level node_modules/bun.lock it produces.
-    await exec('bunx', [PIN, 'api', '--template', 'bun', '--pm', 'bun', '--install'], {
+    await exec('bunx', [resolvePin(PIN), 'api', '--template', 'bun', '--pm', 'bun', '--install'], {
       cwd: join(ctx.root, 'apps'),
       verbose: ctx.verbose,
     });

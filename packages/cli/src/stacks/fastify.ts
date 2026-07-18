@@ -1,7 +1,8 @@
-import { join } from 'node:path';
+﻿import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { readJson, writeFileLf, writeJson } from '../fsx';
+import { resolvePin } from './shared';
 import type { StackAdapter } from './types';
 
 const PIN = 'fastify-cli@8';
@@ -31,7 +32,7 @@ export const fastify: StackAdapter = {
   scaffolderPin: PIN,
   async scaffold(ctx) {
     // fastify generate writes files only: no git init, no install.
-    await exec('bunx', [PIN, 'generate', 'api', '--lang=ts'], {
+    await exec('bunx', [resolvePin(PIN), 'generate', 'api', '--lang=ts'], {
       cwd: join(ctx.root, 'apps'),
       verbose: ctx.verbose,
     });
