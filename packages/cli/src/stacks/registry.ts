@@ -12,7 +12,7 @@ const ADAPTERS: Partial<Record<StackId, StackAdapter>> = {
   // react-vite, nuxt, expo, hono, fastify land in M3.
 };
 
-export function getAdapter(id: StackId): StackAdapter {
+function getAdapter(id: StackId): StackAdapter {
   const adapter = ADAPTERS[id];
   if (!adapter) {
     throw new ScaffoldError(`Stack "${id}" is not implemented yet.`, { stackId: id });
