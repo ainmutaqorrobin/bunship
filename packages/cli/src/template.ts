@@ -10,7 +10,7 @@ export const templatesRoot = fileURLToPath(new URL('../templates', import.meta.u
 
 export type TemplateVars = Record<string, string>;
 
-export function renderVars(content: string, vars: TemplateVars): string {
+function renderVars(content: string, vars: TemplateVars): string {
   return content.replace(/\{\{(\w+)\}\}/g, (whole, key: string) => vars[key] ?? whole);
 }
 
