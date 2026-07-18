@@ -1,10 +1,10 @@
 {
-  "name": "create-scaffolder",
+  "name": "create-bunship",
   "version": "0.1.0",
-  "description": "Scaffold production-ready Bun monorepos using official framework scaffolders",
+  "description": "Scaffold and ship production-ready Bun monorepos using official framework scaffolders",
   "license": "MIT",
   "bin": {
-    "create-scaffolder": "./dist/index.mjs"
+    "create-bunship": "./dist/index.mjs"
   },
   "files": [
     "dist",

@@ -1,5 +1,5 @@
 {
-  "name": "scaffolder-monorepo",
+  "name": "bunship",
   "private": true,
   "workspaces": [
     "packages/*"

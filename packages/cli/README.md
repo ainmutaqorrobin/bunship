@@ -1,16 +1,15 @@
-# create-scaffolder
+# create-bunship
 
-> Working name — the final package name is decided before the first publish.
-
-Scaffold a production-ready **Bun monorepo** in one command. Instead of maintaining its own
-boilerplate, this CLI orchestrates each framework's **official scaffolder**
-(`create-next-app`, `nest new`, `create-vite`, `create-nuxt`, `create-expo-app`,
-`create-hono`, `fastify generate`) and then wires a single coherent toolchain on top.
+Scaffold a production-ready **Bun monorepo** in one command — and ship it. Instead of
+maintaining its own boilerplate, bunship orchestrates each framework's **official
+scaffolder** (`create-next-app`, `nest new`, `create-vite`, `create-nuxt`,
+`create-expo-app`, `create-hono`, `fastify generate`) and then wires a single coherent
+toolchain on top.
 
 ```sh
-bun create scaffolder my-startup            # interactive
+bun create bunship my-startup               # interactive
 # or, fully non-interactive (AI-agent mode):
-bunx create-scaffolder my-startup --web next --api nest --docker --cicd --json
+bunx create-bunship my-startup --web next --api nest --docker --cicd --json
 ```
 
 ## What you get
