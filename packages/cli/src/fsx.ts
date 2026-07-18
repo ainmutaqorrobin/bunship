@@ -1,4 +1,4 @@
-import { chmod, cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 export async function ensureDir(dir: string): Promise<void> {
@@ -66,8 +66,4 @@ export async function rimraf(target: string): Promise<void> {
   }
   await makeWritable(target);
   await rm(target, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
-}
-
-export async function copyDir(src: string, dest: string): Promise<void> {
-  await cp(src, dest, { recursive: true });
 }

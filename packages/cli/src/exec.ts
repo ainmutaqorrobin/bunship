@@ -37,7 +37,7 @@ export interface ExecOptions {
   timeoutMs?: number;
 }
 
-export class ExecError extends Error {
+class ExecError extends Error {
   readonly command: string;
   readonly code: number | null;
   readonly tail: string[];
