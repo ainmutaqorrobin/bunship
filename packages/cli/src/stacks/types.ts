@@ -1,0 +1,56 @@
+import type { ProjectConfig, StackId } from '../config/schema';
+import type { Reporter } from '../reporter/types';
+
+/** Declarative contributions an adapter makes to root-level files (aggregated by steps). */
+export interface ToolingFragment {
+  oxlintPlugins?: string[];
+  /** Rule overrides merged into the generated .oxlintrc.json `rules` object. */
+  oxlintRules?: Record<string, unknown>;
+  /** Merged into knip.json under `workspaces["apps/<dir>"]`. Empty object = plugins auto-detect. */
+  knipWorkspace?: Record<string, unknown>;
+  /** Metro/Expo needs a flat node_modules; forces bunfig `linker = "hoisted"`. */
+  hoistedLinker?: boolean;
+  gitignore?: string[];
+  /** Extra file extensions oxfmt should cover in lint-staged (e.g. "vue"). */
+  formatExtensions?: string[];
+}
+
+export interface DockerSpec {
+  /** Filename inside templates/docker/. */
+  template: string;
+  containerPort: number;
+  hostPort: number;
+  healthPath: string;
+  vars?: Record<string, string>;
+}
+
+export interface AppCtx {
+  cfg: ProjectConfig;
+  /** Repo root (= cfg.targetDir). Adapters must never write outside appDir. */
+  root: string;
+  appDir: string;
+  /** POSIX-style path relative to root, e.g. "apps/web". */
+  relDir: string;
+  pkgName: string;
+  verbose: boolean;
+  report: Reporter;
+}
+
+export interface StackAdapter {
+  id: StackId;
+  kind: 'web' | 'mobile' | 'api';
+  label: string;
+  dirName: string;
+  devPort: number | null;
+  /** Exact-pinned official scaffolder package (e.g. "create-next-app@16"); null = internal template. */
+  scaffolderPin: string | null;
+  /** Materialize appDir by running the official scaffolder (or copying the internal template). */
+  scaffold(ctx: AppCtx): Promise<void>;
+  /** Framework-specific fixups. Runs AFTER the step-owned universal cleanup. */
+  postProcess?(ctx: AppCtx): Promise<void>;
+  /** Scripts ensured (added only if missing) in the app's package.json. */
+  scripts: Partial<Record<'dev' | 'build' | 'start' | 'typecheck', string>>;
+  tooling: ToolingFragment;
+  /** Undefined = no container for this app (e.g. Expo). */
+  docker?: DockerSpec;
+}

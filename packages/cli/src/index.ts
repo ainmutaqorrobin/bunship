@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { Command, Option } from 'commander';
 
 import { BIN_NAME } from './branding';
+import type { RawFlags } from './config/resolve';
 import { run } from './run';
 import { selftest } from './selftest';
 
@@ -49,7 +50,7 @@ program
       selftest();
       return;
     }
-    await run(dir, opts as never, program);
+    await run(dir, opts as unknown as RawFlags, version);
   });
 
 await program.parseAsync(process.argv);
