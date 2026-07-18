@@ -6,6 +6,8 @@ interface ToolingFragment {
   oxlintPlugins?: string[];
   /** Rule overrides merged into the generated .oxlintrc.json `rules` object. */
   oxlintRules?: Record<string, unknown>;
+  /** File-scoped entries appended to the generated .oxlintrc.json `overrides` array. */
+  oxlintOverrides?: Array<Record<string, unknown>>;
   /** Merged into knip.json under `workspaces["apps/<dir>"]`. Empty object = plugins auto-detect. */
   knipWorkspace?: Record<string, unknown>;
   /** Metro/Expo needs a flat node_modules; forces bunfig `linker = "hoisted"`. */

@@ -36,6 +36,14 @@ const JUNK = [
   'prettier.config.mjs',
   'biome.json',
   'biome.jsonc',
+  // Some scaffolders (e.g. create-vite@9) now ship oxc configs themselves; the root
+  // config must stay the single source of truth (oxlint is nearest-config-wins).
+  '.oxlintrc.json',
+  '.oxlintrc.jsonc',
+  '.oxfmtrc.json',
+  '.oxfmtrc.jsonc',
+  'oxlint.config.ts',
+  'oxlint.config.mts',
   'AGENTS.md',
   'CLAUDE.md',
 ];
@@ -44,6 +52,8 @@ function isLintFormatDep(dep: string): boolean {
   return (
     dep === 'eslint' ||
     dep === 'prettier' ||
+    dep === 'oxlint' ||
+    dep === 'oxfmt' ||
     dep === 'typescript-eslint' ||
     dep === 'globals' || // only ever present for ESLint configs in scaffolded apps
     dep === '@next/eslint-plugin-next' ||
@@ -82,7 +92,14 @@ export async function ensureAppPackageJson(ctx: AppCtx, adapter: StackAdapter): 
   pkg.scripts ??= {};
   // Per-app lint/format scripts are replaced by the root oxc toolchain.
   for (const [key, command] of Object.entries(pkg.scripts)) {
-    if (/\b(?:eslint|prettier|biome)\b/.test(command)) delete pkg.scripts[key];
+    if (/\b(?:eslint|prettier|biome)\b/.test(command)) {
+      delete pkg.scripts[key];
+      continue;
+    }
+    // Bun-first repos: scripts must not depend on npm being present.
+    if (command.includes('npm run ')) {
+      pkg.scripts[key] = command.replaceAll('npm run ', 'bun run ');
+    }
   }
   for (const [key, value] of Object.entries(adapter.scripts)) {
     pkg.scripts[key] ??= value;

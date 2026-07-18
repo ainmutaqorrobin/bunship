@@ -14,11 +14,12 @@ export const next: StackAdapter = {
   devPort: 3000,
   scaffolderPin: PIN,
   async scaffold(ctx) {
+    // Relative dir + cwd=apps/: some scaffolders mis-handle absolute Windows paths.
     await exec(
       'bunx',
       [
         PIN,
-        ctx.appDir,
+        'web',
         '--ts',
         '--tailwind',
         '--app',
@@ -33,7 +34,7 @@ export const next: StackAdapter = {
         '--no-agents-md',
         '--yes',
       ],
-      { cwd: ctx.root, verbose: ctx.verbose },
+      { cwd: join(ctx.root, 'apps'), verbose: ctx.verbose },
     );
   },
   async postProcess(ctx) {

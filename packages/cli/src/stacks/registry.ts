@@ -1,15 +1,24 @@
 import type { ProjectConfig, StackId } from '../config/schema';
 import { ScaffoldError } from '../errors';
+import { expo } from './expo';
 import { express } from './express';
+import { fastify } from './fastify';
+import { hono } from './hono';
 import { nest } from './nest';
 import { next } from './next';
+import { nuxt } from './nuxt';
+import { reactVite } from './react-vite';
 import type { StackAdapter } from './types';
 
 const ADAPTERS: Partial<Record<StackId, StackAdapter>> = {
   next,
+  'react-vite': reactVite,
+  nuxt,
+  expo,
   nest,
   express,
-  // react-vite, nuxt, expo, hono, fastify land in M3.
+  hono,
+  fastify,
 };
 
 function getAdapter(id: StackId): StackAdapter {

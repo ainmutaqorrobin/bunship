@@ -13,9 +13,7 @@ export const express: StackAdapter = {
     await copyTemplateDir('stacks/express', ctx.appDir, { pkgName: ctx.pkgName });
   },
   scripts: {},
-  tooling: {
-    knipWorkspace: { entry: ['src/index.ts'] },
-  },
+  tooling: {},
   docker: {
     template: 'node-api.Dockerfile.tpl',
     containerPort: 3001,

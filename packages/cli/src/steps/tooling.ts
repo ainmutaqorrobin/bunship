@@ -32,6 +32,7 @@ export const tooling: Step = {
     // Aggregate adapter fragments.
     const oxlintPlugins = new Set(BASE_OXLINT_PLUGINS);
     const oxlintRules: Record<string, unknown> = {};
+    const oxlintOverrides: Array<Record<string, unknown>> = [];
     const formatExtensions = new Set(BASE_FORMAT_EXTENSIONS);
     const gitignoreExtra: string[] = [];
     const knipWorkspaces: Record<string, unknown> = { '.': {} };
@@ -39,6 +40,7 @@ export const tooling: Step = {
     for (const a of adapters) {
       for (const p of a.tooling.oxlintPlugins ?? []) oxlintPlugins.add(p);
       Object.assign(oxlintRules, a.tooling.oxlintRules ?? {});
+      oxlintOverrides.push(...(a.tooling.oxlintOverrides ?? []));
       for (const e of a.tooling.formatExtensions ?? []) formatExtensions.add(e);
       for (const g of a.tooling.gitignore ?? []) gitignoreExtra.push(g);
       knipWorkspaces[`apps/${a.dirName}`] = a.tooling.knipWorkspace ?? {};
@@ -102,6 +104,7 @@ export const tooling: Step = {
       plugins: [...oxlintPlugins].toSorted(),
       categories: { correctness: 'error', suspicious: 'warn' },
       ...(Object.keys(oxlintRules).length > 0 ? { rules: oxlintRules } : {}),
+      ...(oxlintOverrides.length > 0 ? { overrides: oxlintOverrides } : {}),
       env: { browser: true, node: true },
       ignorePatterns: [
         '**/dist',
