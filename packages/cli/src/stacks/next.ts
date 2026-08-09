@@ -46,7 +46,10 @@ export const next: StackAdapter = {
     dev: 'next dev --turbopack',
     build: 'next build',
     start: 'next start',
-    typecheck: 'tsc --noEmit',
+    // `next typegen` first: since 16.3 the scaffolded layout.tsx uses the global
+    // LayoutProps helper, which only exists after `next dev`/`build`/`typegen` writes
+    // .next/types. Plain `tsc --noEmit` on a fresh clone would fail with TS2304.
+    typecheck: 'next typegen && tsc --noEmit',
   },
   tooling: {
     oxlintPlugins: ['react', 'jsx-a11y', 'nextjs'],
