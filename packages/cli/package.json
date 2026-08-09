@@ -30,7 +30,7 @@
     "directory": "packages/cli"
   },
   "bin": {
-    "create-bunship": "./dist/index.mjs"
+    "create-bunship": "dist/index.mjs"
   },
   "files": [
     "dist",
