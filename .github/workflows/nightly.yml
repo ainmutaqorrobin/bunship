@@ -22,9 +22,13 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.x
+      # Framework CLIs (nuxt, next, …) run under node via their bin shebang, not
+      # under bun — so this is the node that builds the generated repo. Nuxt 4.5
+      # dropped Node 20 (engines: ^22.19 || ^24.11 || >=26), hence 22, not the 20
+      # floor that ci.yml pins to prove the CLI stays npx-compatible.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: bun install --frozen-lockfile
       - run: bun run build
         working-directory: packages/cli
@@ -60,9 +64,13 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.x
+      # Framework CLIs (nuxt, next, …) run under node via their bin shebang, not
+      # under bun — so this is the node that builds the generated repo. Nuxt 4.5
+      # dropped Node 20 (engines: ^22.19 || ^24.11 || >=26), hence 22, not the 20
+      # floor that ci.yml pins to prove the CLI stays npx-compatible.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: bun install --frozen-lockfile
       - run: bun run build
         working-directory: packages/cli
