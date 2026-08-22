@@ -13,6 +13,7 @@ export const reactVite: StackAdapter = {
   dirName: 'web',
   devPort: 5173,
   scaffolderPin: PIN,
+  minNode: '20.19.0',
   async scaffold(ctx) {
     // create-vite sanitizes absolute Windows paths into a folder NAME — always pass
     // a relative dir with cwd=apps/.

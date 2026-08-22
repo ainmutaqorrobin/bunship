@@ -92,5 +92,22 @@ steps), exit codes are meaningful (0 ok / 1 pipeline / 2 usage), and the generat
 contains an `AGENTS.md` so agents don't re-derive conventions. Boilerplate comes from
 official scaffolders, not from model output — that's the whole point.
 
-Requires **Bun ≥ 1.3** on PATH (plus git, unless `--no-git`). The CLI itself runs under
-Node ≥ 20 (npx-compatible).
+## Requirements
+
+**Bun ≥ 1.3** on PATH, plus git (unless `--no-git`). The CLI itself runs under Node ≥ 20,
+so `npx create-bunship` works too.
+
+Your chosen stack may need more, because framework CLIs (`nuxt`, `next`, `vite`, `nest`)
+run under **node** via their bin shebang rather than under bun — so the node on your PATH
+is what actually builds the generated repo:
+
+| Stack        | Needs        |
+| ------------ | ------------ |
+| Nuxt         | Node ≥ 22.19 |
+| React + Vite | Node ≥ 20.19 |
+| Next.js      | Node ≥ 20.9  |
+| NestJS       | Node ≥ 20    |
+
+bunship checks this during preflight and fails in about a second with the version it
+found, rather than letting you discover it as an upstream stack trace after a full
+install.

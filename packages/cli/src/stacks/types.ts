@@ -46,6 +46,17 @@ export interface StackAdapter {
   devPort: number | null;
   /** Exact-pinned official scaffolder package (e.g. "create-next-app@16"); null = internal template. */
   scaffolderPin: string | null;
+  /**
+   * Minimum Node this framework's own CLI needs at dev/build time. Framework binaries
+   * run under node via their bin shebang — NOT under bun — so bun's version says
+   * nothing about whether `nuxt build` will work.
+   *
+   * A plain floor rather than the upstream semver range (`^22.19 || ^24.11`): matching
+   * ranges properly would mean taking a semver dependency, and this package ships zero.
+   * Floors only ever rise, so a stale value errs toward letting a build through, never
+   * toward blocking a setup that works.
+   */
+  minNode?: string;
   /** Materialize appDir by running the official scaffolder (or copying the internal template). */
   scaffold(ctx: AppCtx): Promise<void>;
   /** Framework-specific fixups. Runs AFTER the step-owned universal cleanup. */

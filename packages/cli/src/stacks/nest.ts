@@ -25,6 +25,7 @@ export const nest: StackAdapter = {
   dirName: 'api',
   devPort: 3001,
   scaffolderPin: PIN,
+  minNode: '20.0.0',
   async scaffold(ctx) {
     // `nest new` has no --directory flag: the name positional doubles as the target dir,
     // so run it inside apps/. Bun is not an accepted --package-manager value (nest-cli#2223);

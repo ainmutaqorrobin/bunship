@@ -14,6 +14,7 @@ export const next: StackAdapter = {
   dirName: 'web',
   devPort: 3000,
   scaffolderPin: PIN,
+  minNode: '20.9.0',
   async scaffold(ctx) {
     // Relative dir + cwd=apps/: some scaffolders mis-handle absolute Windows paths.
     await exec(
