@@ -3,6 +3,7 @@
   "workspaces": {
     ".": {},
     "packages/cli": {
+      "entry": ["scripts/release.ts"],
       "ignore": ["templates/**"],
       "ignoreBinaries": ["taskkill"]
     }
