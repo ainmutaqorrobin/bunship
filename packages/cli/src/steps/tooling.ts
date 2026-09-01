@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 
 import { BIN_NAME } from '../branding';
-import { writeFileLf, writeJson } from '../fsx';
+import { readJson, writeFileLf, writeJson } from '../fsx';
 import { selectedAdapters } from '../stacks/registry';
 import { BUN_ENGINES, GENERATED_DEV_DEPS, GENERATED_GIT_DEV_DEPS } from '../versions';
 import type { Step } from './types';
@@ -19,6 +19,35 @@ const BASE_GITIGNORE = [
 
 const BASE_OXLINT_PLUGINS = ['import', 'typescript', 'unicorn'];
 const BASE_FORMAT_EXTENSIONS = ['json', 'jsonc', 'md', 'yml', 'yaml', 'css'];
+
+/**
+ * Adapters declare `ignoreDependencies` against the pinned scaffolder's output. When a
+ * newer scaffolder drops one of those packages the stale entry is harmless to knip's
+ * exit code, but it surfaces as a configuration hint in every generated repo — so keep
+ * only the entries the app actually depends on.
+ */
+async function pruneIgnoredDeps(
+  root: string,
+  dirName: string,
+  workspace: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const ignored = workspace.ignoreDependencies;
+  if (!Array.isArray(ignored)) return workspace;
+  const pkg = await readJson<{
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  }>(join(root, 'apps', dirName, 'package.json'));
+  const present = new Set([
+    ...Object.keys(pkg.dependencies ?? {}),
+    ...Object.keys(pkg.devDependencies ?? {}),
+  ]);
+  const kept = (ignored as unknown[]).filter(
+    (dep): dep is string => typeof dep === 'string' && present.has(dep),
+  );
+  if (kept.length === ignored.length) return workspace;
+  const { ignoreDependencies: _dropped, ...rest } = workspace;
+  return kept.length > 0 ? { ...rest, ignoreDependencies: kept } : rest;
+}
 
 export const tooling: Step = {
   id: 'tooling',
@@ -43,7 +72,11 @@ export const tooling: Step = {
       oxlintOverrides.push(...(a.tooling.oxlintOverrides ?? []));
       for (const e of a.tooling.formatExtensions ?? []) formatExtensions.add(e);
       for (const g of a.tooling.gitignore ?? []) gitignoreExtra.push(g);
-      knipWorkspaces[`apps/${a.dirName}`] = a.tooling.knipWorkspace ?? {};
+      knipWorkspaces[`apps/${a.dirName}`] = await pruneIgnoredDeps(
+        root,
+        a.dirName,
+        a.tooling.knipWorkspace ?? {},
+      );
       if (a.tooling.hoistedLinker) hoisted = true;
     }
     // v1: always hoist. Bun >=1.3.2 defaults new workspaces to the isolated linker, but
@@ -68,6 +101,10 @@ export const tooling: Step = {
       knip: 'knip',
       check: 'bun run lint && bun run format:check && bun run typecheck && bun run knip',
     });
+    if (cfg.docker) {
+      scripts['docker:dev'] = 'docker compose -f compose.dev.yaml up --watch';
+      scripts['docker:prod'] = 'docker compose up --build';
+    }
     if (cfg.git) scripts.prepare = 'husky';
     rc.rootScripts = scripts;
 
@@ -180,7 +217,29 @@ export const tooling: Step = {
       'bun run check          # oxlint + oxfmt + typecheck + knip',
       'bun run lint:fix       # autofix lint findings',
       'bun run format         # format the whole repo (oxfmt)',
+      ...(cfg.docker
+        ? [
+            'bun run docker:dev     # every app in Docker, hot reload',
+            'bun run docker:prod    # local prod-parity run',
+          ]
+        : []),
       '```',
+      ...(cfg.docker
+        ? [
+            '',
+            '## Docker',
+            '',
+            '| File | Purpose |',
+            '| --- | --- |',
+            '| `compose.yaml` | production images, the same ones CI deploys |',
+            '| `compose.dev.yaml` | dev servers for every app, hot reload |',
+            '',
+            '`docker:dev` runs `docker compose ... up --watch`. The `--watch` is load-bearing:',
+            'Compose syncs your edits into the containers, and rebuilds an image when a',
+            '`package.json` or `bun.lock` changes. Plain `up` boots the same stack with the',
+            'source frozen at build time.',
+          ]
+        : []),
       '',
       '## Toolchain',
       '',
@@ -227,6 +286,13 @@ export const tooling: Step = {
       '- `bunfig.toml` pins the hoisted linker — do not remove it (Turbopack/Metro need it).',
       ...(cfg.stacks.api
         ? ['- The API serves `GET /health` and reads `PORT` (default 3001).']
+        : []),
+      ...(cfg.docker
+        ? [
+            '- `compose.yaml` is the production stack; `compose.dev.yaml` (via `bun run docker:dev`)',
+            '  is the dev stack. The dev stack has NO bind mounts — `up --watch` syncs source in,',
+            '  so a plain `up` will not pick up edits.',
+          ]
         : []),
       ...(cfg.git
         ? [

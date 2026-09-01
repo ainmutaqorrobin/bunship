@@ -16,6 +16,10 @@
     "format:check": "oxfmt --check",
     "knip": "knip",
     "check": "bun run lint && bun run format:check && bun run typecheck && bun run knip",
+    "release": "bun packages/cli/scripts/release.ts",
+    "release:minor": "bun packages/cli/scripts/release.ts minor",
+    "release:major": "bun packages/cli/scripts/release.ts major",
+    "release:dry": "bun packages/cli/scripts/release.ts --dry-run",
     "prepare": "husky"
   },
   "devDependencies": {

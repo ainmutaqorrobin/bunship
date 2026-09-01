@@ -1,4 +1,4 @@
-﻿import { join } from 'node:path';
+import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { copyTemplate } from '../template';
@@ -63,6 +63,7 @@ export const next: StackAdapter = {
     gitignore: ['.next/', 'next-env.d.ts'],
   },
   docker: {
+    dev: { args: ['-H', '0.0.0.0'] },
     template: 'next.Dockerfile.tpl',
     containerPort: 3000,
     hostPort: 3000,
