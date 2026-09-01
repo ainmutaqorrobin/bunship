@@ -24,6 +24,19 @@ interface DockerSpec {
   hostPort: number;
   healthPath: string;
   vars?: Record<string, string>;
+  /**
+   * How this framework's dev server behaves inside the compose.dev.yaml container.
+   * A dev server that binds 127.0.0.1 is unreachable through a published port, and
+   * every framework spells "listen on all interfaces" differently.
+   */
+  dev?: {
+    /**
+     * Appended to `bun run dev`. Only safe for single-command dev scripts — bun hands
+     * a compound script to the shell, which swallows trailing args (use `env` there).
+     */
+    args?: string[];
+    env?: Record<string, string>;
+  };
 }
 
 export interface AppCtx {

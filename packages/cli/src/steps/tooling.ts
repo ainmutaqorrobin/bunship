@@ -101,6 +101,10 @@ export const tooling: Step = {
       knip: 'knip',
       check: 'bun run lint && bun run format:check && bun run typecheck && bun run knip',
     });
+    if (cfg.docker) {
+      scripts['docker:dev'] = 'docker compose -f compose.dev.yaml up --watch';
+      scripts['docker:prod'] = 'docker compose up --build';
+    }
     if (cfg.git) scripts.prepare = 'husky';
     rc.rootScripts = scripts;
 
@@ -213,7 +217,29 @@ export const tooling: Step = {
       'bun run check          # oxlint + oxfmt + typecheck + knip',
       'bun run lint:fix       # autofix lint findings',
       'bun run format         # format the whole repo (oxfmt)',
+      ...(cfg.docker
+        ? [
+            'bun run docker:dev     # every app in Docker, hot reload',
+            'bun run docker:prod    # local prod-parity run',
+          ]
+        : []),
       '```',
+      ...(cfg.docker
+        ? [
+            '',
+            '## Docker',
+            '',
+            '| File | Purpose |',
+            '| --- | --- |',
+            '| `compose.yaml` | production images, the same ones CI deploys |',
+            '| `compose.dev.yaml` | dev servers for every app, hot reload |',
+            '',
+            '`docker:dev` runs `docker compose ... up --watch`. The `--watch` is load-bearing:',
+            'Compose syncs your edits into the containers, and rebuilds an image when a',
+            '`package.json` or `bun.lock` changes. Plain `up` boots the same stack with the',
+            'source frozen at build time.',
+          ]
+        : []),
       '',
       '## Toolchain',
       '',
@@ -260,6 +286,13 @@ export const tooling: Step = {
       '- `bunfig.toml` pins the hoisted linker — do not remove it (Turbopack/Metro need it).',
       ...(cfg.stacks.api
         ? ['- The API serves `GET /health` and reads `PORT` (default 3001).']
+        : []),
+      ...(cfg.docker
+        ? [
+            '- `compose.yaml` is the production stack; `compose.dev.yaml` (via `bun run docker:dev`)',
+            '  is the dev stack. The dev stack has NO bind mounts — `up --watch` syncs source in,',
+            '  so a plain `up` will not pick up edits.',
+          ]
         : []),
       ...(cfg.git
         ? [

@@ -27,7 +27,11 @@ describe('buildManifest', () => {
         apps: [],
         scripts: { dev: "bun --filter '*' dev" },
         bunLinker: 'hoisted',
-        docker: { compose: 'compose.yaml', services: ['web', 'api'] },
+        docker: {
+          compose: 'compose.yaml',
+          composeDev: 'compose.dev.yaml',
+          services: ['web', 'api'],
+        },
         cicd: null,
         git: { initialized: true, committed: true },
       },

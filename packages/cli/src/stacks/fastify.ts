@@ -1,4 +1,4 @@
-﻿import { join } from 'node:path';
+import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { readJson, writeFileLf, writeJson } from '../fsx';
@@ -71,6 +71,7 @@ export const fastify: StackAdapter = {
     },
   },
   docker: {
+    dev: { env: { FASTIFY_ADDRESS: '0.0.0.0' } },
     template: 'node-api.Dockerfile.tpl',
     containerPort: 3001,
     hostPort: 3001,

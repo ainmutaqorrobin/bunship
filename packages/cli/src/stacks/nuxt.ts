@@ -1,4 +1,4 @@
-﻿import { join } from 'node:path';
+import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { readJson, writeJson } from '../fsx';
@@ -57,6 +57,7 @@ export const nuxt: StackAdapter = {
     },
   },
   docker: {
+    dev: { args: ['--host', '0.0.0.0'] },
     template: 'nuxt.Dockerfile.tpl',
     containerPort: 3000,
     hostPort: 3000,

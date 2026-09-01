@@ -24,7 +24,7 @@ export interface Manifest {
     bunLinker: 'isolated' | 'hoisted';
   };
   scripts: Record<string, string>;
-  docker: { compose: string; services: string[] } | null;
+  docker: { compose: string; composeDev: string; services: string[] } | null;
   cicd: { workflows: string[]; requiredSecrets: string[]; environments: string[] } | null;
   git: { initialized: boolean; committed: boolean };
   nextSteps: string[];
@@ -51,7 +51,10 @@ export function buildManifest(
   if (!cfg.install) nextSteps.push('bun install');
   nextSteps.push('bun run dev            # all dev servers (see dev:* for one app)');
   nextSteps.push('bun run check          # lint + format + typecheck + knip');
-  if (cfg.docker) nextSteps.push('docker compose up --build   # local prod-parity run');
+  if (cfg.docker) {
+    nextSteps.push('bun run docker:dev     # every app in Docker, hot reload');
+    nextSteps.push('bun run docker:prod    # local prod-parity run');
+  }
   if (cfg.cicd) {
     nextSteps.push(
       'Push to GitHub and set the deploy secrets listed under `cicd.requiredSecrets` (see deploy/README.md)',

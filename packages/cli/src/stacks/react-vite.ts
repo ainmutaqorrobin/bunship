@@ -1,4 +1,4 @@
-﻿import { join } from 'node:path';
+import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { resolvePin } from './shared';
@@ -33,6 +33,8 @@ export const reactVite: StackAdapter = {
     },
   },
   docker: {
+    // Vite binds 127.0.0.1 by default and reads no HOST env — the flag is the only way.
+    dev: { args: ['--host', '0.0.0.0'] },
     template: 'vite-nginx.Dockerfile.tpl',
     containerPort: 80,
     hostPort: 3000,
