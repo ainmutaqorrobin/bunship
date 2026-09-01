@@ -49,7 +49,9 @@ my-startup/
 │
 │   with --docker:
 ├── apps/*/Dockerfile        per-app production images
-├── compose.yaml             local prod-parity: docker compose up --build
+├── compose.yaml             local prod-parity: bun run docker:prod
+├── dev.Dockerfile           shared dev image (bun + node) for the dev stack
+├── compose.dev.yaml         every app's dev server, hot reload: bun run docker:dev
 │
 │   with --cicd (implies --docker):
 ├── .github/workflows/       ci.yml (check + build) · deploy.yml (GHCR → SSH → compose)
@@ -65,10 +67,37 @@ The generated root `package.json` gives you:
 | `bun run build`               | build every app                                  |
 | `bun run check`               | lint + format:check + typecheck + knip           |
 | `bun run lint` / `format`     | oxlint / oxfmt (with `:fix` / `:check` variants) |
+| `bun run docker:dev`          | every app in Docker with hot reload (`--docker`) |
+| `bun run docker:prod`         | local prod-parity run of the images CI deploys   |
 
 The CLI finishes by running `git init`, `bun install`, an oxfmt pass, and a first commit
 — so every generated repo passes `bun run check` and `bun run build` from its very first
 commit (enforced by this project's nightly CI matrix against latest upstream scaffolders).
+
+## The Docker dev stack
+
+`--docker` writes two compose files. `compose.yaml` builds the per-app production images —
+the same ones the deploy workflow ships. `compose.dev.yaml` runs each app's **dev server**
+instead, all from one shared `dev.Dockerfile`, so you can bring the whole stack up in
+containers while you work:
+
+```sh
+bun run docker:dev     # docker compose -f compose.dev.yaml up --watch
+bun run docker:prod    # docker compose up --build
+```
+
+The `--watch` is load-bearing. There are **no bind mounts** — Compose Watch syncs your
+edits into the running containers, and rebuilds when a `package.json` or `bun.lock`
+changes (a new dependency can't be synced into an image whose `node_modules` is already
+baked in). Bind mounts don't reliably deliver file-change events from Windows or macOS
+hosts, which is exactly where hot reload silently stops working. Plain `up` (no `--watch`)
+boots the same stack with the source frozen at image-build time.
+
+Each framework's dev server is started so it binds `0.0.0.0` and is reachable through the
+published port (`-H 0.0.0.0` for Next, `--host 0.0.0.0` for Vite and Nuxt,
+`FASTIFY_ADDRESS` for Fastify; Nest, Express, and Hono already do). Expo is not in either
+stack — Metro needs LAN reachability and QR pairing, so `bun run dev:mobile` on the host
+stays the path.
 
 ## Flags
 

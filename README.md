@@ -8,7 +8,8 @@ top:
 - **oxc** — `oxlint` (linting) + `oxfmt` (formatting)
 - **knip** — unused files, exports, and dependencies
 - **husky + lint-staged** — pre-commit format/lint, pre-push full check
-- optional **Docker + GitHub Actions CI/CD** — VPS deploy (image → registry → SSH → compose → Nginx/TLS)
+- optional **Docker** — prod-parity `compose.yaml` plus a hot-reload dev stack (`bun run docker:dev`)
+- optional **GitHub Actions CI/CD** — VPS deploy (image → registry → SSH → compose → Nginx/TLS)
 
 Because apps come from official scaffolders, generated code always matches upstream — and AI
 coding agents can bootstrap projects without burning tokens on boilerplate (`--json` agent mode).
@@ -35,13 +36,17 @@ my-startup/
 ├── package.json             bun workspaces · dev / dev:<app> / build / check scripts
 ├── .oxlintrc.json · .oxfmtrc.json · knip.json
 ├── .husky/ · .vscode/ · AGENTS.md · CLAUDE.md · .env.example
-├── compose.yaml + per-app Dockerfile                  (--docker)
+├── compose.yaml · compose.dev.yaml · Dockerfiles      (--docker)
 ├── .github/workflows/{ci,deploy}.yml                  (--cicd)
 └── deploy/                  VPS bundle: compose, nginx + TLS, bootstrap guide
 ```
 
 Finishes with `git init` → `bun install` → oxfmt pass → first commit. Full flag reference
 and details: [packages/cli/README.md](packages/cli/README.md).
+
+With `--docker` you get two stacks: `bun run docker:prod` (the images CI deploys) and
+`bun run docker:dev` — every app's dev server in a container, hot reload via Compose
+Watch rather than bind mounts, so edits land on Windows and macOS hosts too.
 
 ## Repo layout
 
