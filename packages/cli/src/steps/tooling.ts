@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 
 import { BIN_NAME } from '../branding';
-import { writeFileLf, writeJson } from '../fsx';
+import { readJson, writeFileLf, writeJson } from '../fsx';
 import { selectedAdapters } from '../stacks/registry';
 import { BUN_ENGINES, GENERATED_DEV_DEPS, GENERATED_GIT_DEV_DEPS } from '../versions';
 import type { Step } from './types';
@@ -19,6 +19,35 @@ const BASE_GITIGNORE = [
 
 const BASE_OXLINT_PLUGINS = ['import', 'typescript', 'unicorn'];
 const BASE_FORMAT_EXTENSIONS = ['json', 'jsonc', 'md', 'yml', 'yaml', 'css'];
+
+/**
+ * Adapters declare `ignoreDependencies` against the pinned scaffolder's output. When a
+ * newer scaffolder drops one of those packages the stale entry is harmless to knip's
+ * exit code, but it surfaces as a configuration hint in every generated repo — so keep
+ * only the entries the app actually depends on.
+ */
+async function pruneIgnoredDeps(
+  root: string,
+  dirName: string,
+  workspace: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const ignored = workspace.ignoreDependencies;
+  if (!Array.isArray(ignored)) return workspace;
+  const pkg = await readJson<{
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  }>(join(root, 'apps', dirName, 'package.json'));
+  const present = new Set([
+    ...Object.keys(pkg.dependencies ?? {}),
+    ...Object.keys(pkg.devDependencies ?? {}),
+  ]);
+  const kept = (ignored as unknown[]).filter(
+    (dep): dep is string => typeof dep === 'string' && present.has(dep),
+  );
+  if (kept.length === ignored.length) return workspace;
+  const { ignoreDependencies: _dropped, ...rest } = workspace;
+  return kept.length > 0 ? { ...rest, ignoreDependencies: kept } : rest;
+}
 
 export const tooling: Step = {
   id: 'tooling',
@@ -43,7 +72,11 @@ export const tooling: Step = {
       oxlintOverrides.push(...(a.tooling.oxlintOverrides ?? []));
       for (const e of a.tooling.formatExtensions ?? []) formatExtensions.add(e);
       for (const g of a.tooling.gitignore ?? []) gitignoreExtra.push(g);
-      knipWorkspaces[`apps/${a.dirName}`] = a.tooling.knipWorkspace ?? {};
+      knipWorkspaces[`apps/${a.dirName}`] = await pruneIgnoredDeps(
+        root,
+        a.dirName,
+        a.tooling.knipWorkspace ?? {},
+      );
       if (a.tooling.hoistedLinker) hoisted = true;
     }
     // v1: always hoist. Bun >=1.3.2 defaults new workspaces to the isolated linker, but

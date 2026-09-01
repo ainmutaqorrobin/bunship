@@ -1,4 +1,4 @@
-﻿import { join } from 'node:path';
+import { join } from 'node:path';
 
 import { exec } from '../exec';
 import { ensureDir, readJson, writeFileLf, writeJson } from '../fsx';
@@ -52,9 +52,22 @@ export const nest: StackAdapter = {
     // Monorepo convention: app-level `start` is the PRODUCTION start (the Docker CMD
     // runs `node --run start`); the template's `nest start` needs the dev-only CLI.
     const pkgPath = join(ctx.appDir, 'package.json');
-    const pkg = await readJson<{ scripts?: Record<string, string> }>(pkgPath);
+    const pkg = await readJson<{
+      type?: string;
+      scripts?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    }>(pkgPath);
     pkg.scripts = { ...pkg.scripts, start: 'node dist/main.js' };
+    // Nest 12 ships `nest deploy` + @nestjs/mau for Nest's own cloud. This repo brings
+    // its own Docker/VPS pipeline, so the pair is dead weight — and knip fails the
+    // generated repo on the unreferenced dependency.
+    delete pkg.scripts.deploy;
+    delete pkg.devDependencies?.['@nestjs/mau'];
     await writeJson(pkgPath, pkg);
+
+    // Nest 12 emits ESM (`"type": "module"`) with explicit .js specifiers; Nest 11 is
+    // CommonJS and extensionless. Every patch below has to land on either shape.
+    const ext = pkg.type === 'module' ? '.js' : '';
 
     await patchFileOrWarn(
       ctx,
@@ -67,8 +80,8 @@ export const nest: StackAdapter = {
     await patchFileOrWarn(
       ctx,
       'src/app.module.ts',
-      "import { AppController } from './app.controller';",
-      "import { AppController } from './app.controller';\nimport { HealthController } from './health.controller';",
+      /import \{ AppController \} from '\.\/app\.controller(?:\.js)?';/,
+      `import { AppController } from './app.controller${ext}';\nimport { HealthController } from './health.controller${ext}';`,
       'import HealthController',
     );
     await patchFileOrWarn(
@@ -77,6 +90,17 @@ export const nest: StackAdapter = {
       'controllers: [AppController]',
       'controllers: [AppController, HealthController]',
       'register HealthController',
+    );
+    // `supertest/types` is types-only — it has no runtime counterpart, and under Nest 12's
+    // nodenext/ESM tsconfig the extensionless specifier does not resolve at all. The
+    // template never notices: `nest build` excludes test/, and the test runner never
+    // typechecks. Our `typecheck` script does cover test/, so it has to resolve there.
+    await patchFileOrWarn(
+      ctx,
+      'test/app.e2e-spec.ts',
+      /import (?:type )?\{ App \} from 'supertest\/types(?:\.js)?';/,
+      `import type { App } from 'supertest/types${ext}';`,
+      'make the supertest type import resolvable',
     );
   },
   scripts: {
@@ -92,10 +116,13 @@ export const nest: StackAdapter = {
     },
     knipWorkspace: {
       // Setting `entry` replaces knip's defaults, so main.ts must be listed too.
-      // The e2e suite runs via `jest --config test/jest-e2e.json`, which knip can't trace.
+      // The e2e suite runs from its own config (jest on 11, vitest on 12), which
+      // knip can't trace back to these files.
       entry: ['src/main.ts', 'test/**/*.e2e-spec.ts'],
       // Used through Nest's framework indirection (platform-express typings, sourcemap
       // support at runtime, webpack-mode builds) — invisible to static analysis.
+      // Filtered against the app's real dependencies before knip.json is written, so
+      // entries that a newer Nest drops (ts-loader on 12) don't linger as config hints.
       ignoreDependencies: ['@types/express', 'source-map-support', 'ts-loader'],
     },
   },
