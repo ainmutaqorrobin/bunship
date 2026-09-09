@@ -1,0 +1,93 @@
+name: Release
+
+# Publishing is tag-driven. `bun run release` runs the gate, bumps, commits, tags and
+# pushes from a laptop, then stops — this workflow is the only thing that reaches npm.
+# That split is the point: the npm credential lives in npm's trusted-publisher config
+# rather than on anyone's machine or in a repo secret.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # gh release create
+  id-token: write # mint the OIDC token npm exchanges for a short-lived publish token
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+
+      # Node 24 for the npm CLI floor that trusted publishing needs (>= 11.5.1).
+      # ci.yml deliberately builds on Node 20 to prove the package stays npx-compatible;
+      # a tag only ever points at a commit that already passed it, so the gate below is
+      # belt and braces against a tag pointing somewhere unexpected — not a re-run of
+      # the support matrix.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Ensure npm can do trusted publishing
+        run: |
+          npm install -g npm@latest
+          npm --version
+
+      - name: Tag must match the package version
+        id: version
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          pkg_version="$(node -p "require('./packages/cli/package.json').version")"
+          if [ "$tag_version" != "$pkg_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME says $tag_version but package.json says $pkg_version"
+            exit 1
+          fi
+          # Prereleases must never take `latest` away from a stable release.
+          case "$pkg_version" in
+            *-*) dist_tag=next ;;
+            *) dist_tag=latest ;;
+          esac
+          echo "version=$pkg_version" >>"$GITHUB_OUTPUT"
+          echo "dist_tag=$dist_tag" >>"$GITHUB_OUTPUT"
+          echo "create-bunship $pkg_version → dist-tag $dist_tag"
+
+      # A re-pushed tag would otherwise fail deep inside `npm publish`; say so up front.
+      - name: Version must not already be on npm
+        run: |
+          if npm view "create-bunship@${{ steps.version.outputs.version }}" version >/dev/null 2>&1; then
+            echo "::error::create-bunship@${{ steps.version.outputs.version }} is already published"
+            exit 1
+          fi
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run check
+
+      # Build before test on purpose: the smoke e2e spawns `node dist/index.mjs` to
+      # exercise the real npx path, and silently skips when dist is missing.
+      - run: bun run build
+        working-directory: packages/cli
+
+      - run: bun test
+
+      # npm, not bun: OIDC trusted publishing is an npm CLI feature. There is no
+      # NPM_TOKEN — npm exchanges this job's OIDC identity for a short-lived token and
+      # attaches a provenance attestation naming the workflow that built the tarball.
+      - name: Publish to npm
+        working-directory: packages/cli
+        run: npm publish --access public --provenance --tag ${{ steps.version.outputs.dist_tag }}
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=''
+          if [ "${{ steps.version.outputs.dist_tag }}" = 'next' ]; then prerelease='--prerelease'; fi
+          gh release create "$GITHUB_REF_NAME" \
+            --title "create-bunship $GITHUB_REF_NAME" \
+            --generate-notes \
+            $prerelease

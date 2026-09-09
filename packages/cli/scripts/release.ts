@@ -1,5 +1,9 @@
 /**
- * Cut a create-bunship release: verify, bump, tag, publish, push.
+ * Cut a create-bunship release: verify, bump, tag, push.
+ *
+ * This script does NOT publish. Pushing the tag hands off to .github/workflows/release.yml,
+ * which re-runs the gate and publishes to npm via OIDC trusted publishing — so the npm
+ * credential lives in npm's trusted-publisher config rather than on a laptop.
  *
  * From the repo root:
  *   bun run release                  # patch  0.1.1 -> 0.1.2
@@ -9,8 +13,8 @@
  *   bun run release:dry              # guards + full gate, nothing mutated
  *
  * Nothing is written until every check has passed, so a failed gate leaves the tree
- * exactly as it was. If publishing fails after the commit and tag exist, the script
- * prints the two commands that undo them — both are still local at that point.
+ * exactly as it was. If the push fails after the commit and tag exist, the script prints
+ * the two commands that undo them — both are still local at that point.
  */
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -47,6 +51,17 @@ function capture(cmd: string, args: string[], cwd = ROOT): string {
 
 function step(message: string): void {
   console.log(`\n› ${message}`);
+}
+
+/** Best-effort link to the run that will publish; cosmetic, so failure is not fatal. */
+function workflowUrl(): string {
+  try {
+    const remote = capture('git', ['remote', 'get-url', 'origin']);
+    const m = /github\.com[:/](.+?)(?:\.git)?$/.exec(remote);
+    return m === null ? '' : `https://github.com/${m[1]}/actions/workflows/release.yml`;
+  } catch {
+    return '';
+  }
 }
 
 // Semver, without taking a semver dependency (this package ships zero deps).
@@ -127,7 +142,7 @@ function main(): void {
   if (dryRun) {
     step('Dry run — packing without publishing');
     run('bun', ['publish', '--dry-run', '--access', 'public', '--tag', distTag], PKG_DIR);
-    console.log(`\nDry run OK. Re-run without --dry-run to release ${tag}.`);
+    console.log(`\nDry run OK. Re-run without --dry-run to tag and push ${tag}.`);
     return;
   }
 
@@ -143,20 +158,21 @@ function main(): void {
   run('git', ['commit', '-m', `chore(release): create-bunship ${tag}`]);
   run('git', ['tag', '-a', tag, '-m', `create-bunship ${tag}`]);
 
-  step(`Publishing to npm (${distTag})`);
+  step(`Pushing ${tag} — the release workflow publishes from there`);
   try {
-    run('bun', ['publish', '--access', 'public', '--tag', distTag], PKG_DIR);
+    run('git', ['push', 'origin', RELEASE_BRANCH, '--follow-tags']);
   } catch (err) {
     console.error(
-      `\nPublish failed. The commit and tag are still local — undo them with:\n  git tag -d ${tag}\n  git reset --hard HEAD~1\n`,
+      `\nPush failed. The commit and tag are still local — undo them with:\n  git tag -d ${tag}\n  git reset --hard HEAD~1\n`,
     );
     throw err;
   }
 
-  step('Pushing the release commit and tag');
-  run('git', ['push', 'origin', RELEASE_BRANCH, '--follow-tags']);
-
-  console.log(`\nReleased: create-bunship ${tag} published and pushed.`);
+  const url = workflowUrl();
+  console.log(
+    `\nPushed create-bunship ${tag}. GitHub Actions publishes it to npm (${distTag}) from here:` +
+      (url === '' ? '' : `\n  ${url}`),
+  );
 }
 
 try {

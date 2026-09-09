@@ -44,9 +44,13 @@ node packages/cli/dist/index.mjs /tmp/demo --web next --api nest --docker --cicd
 SCAFFOLDER_CANARY=1 node packages/cli/dist/index.mjs /tmp/demo --web next --api nest --json
 ```
 
-Releases go through `bun run release` (also `release:minor`, `release:major`, `release:dry`); it
-enforces clean-tree/branch/gate preconditions before bumping, tagging, publishing, and pushing.
-Never bump the version or publish by hand.
+Releases are tag-driven and split in two. `bun run release` (also `release:minor`,
+`release:major`, `release:dry`) enforces clean-tree/branch/gate preconditions, then bumps,
+commits, tags and pushes — and stops there. Pushing the `v*` tag triggers
+`.github/workflows/release.yml`, which re-runs the gate, checks the tag matches
+`package.json`, and publishes to npm with `npm publish --provenance`. Auth is npm **trusted
+publishing** (OIDC): there is no `NPM_TOKEN` secret, so a publish can only ever come from that
+workflow on a `v*` tag. Never bump the version, tag, or publish by hand.
 
 ## Architecture
 
