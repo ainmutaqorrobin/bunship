@@ -14,7 +14,10 @@
  *
  * Nothing is written until every check has passed, so a failed gate leaves the tree
  * exactly as it was. If the push fails after the commit and tag exist, the script prints
- * the two commands that undo them — both are still local at that point.
+ * the two commands that undo them — the push is atomic, so both are still local at that point.
+ *
+ * The push goes straight to main, so any ruleset on main that requires a pull request must
+ * let the releasing user bypass it (Settings → Rules → the ruleset → Bypass list).
  */
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -159,8 +162,12 @@ function main(): void {
   run('git', ['tag', '-a', tag, '-m', `create-bunship ${tag}`]);
 
   step(`Pushing ${tag} — the release workflow publishes from there`);
+  // --atomic: the branch and the tag land together or not at all. Without it a rejected
+  // branch push (a ruleset on main, a race with someone else's merge) still lets the tag
+  // through, the tag triggers the publish workflow, and npm ends up carrying a version whose
+  // commit is reachable only from the tag — and the undo advice below becomes actively wrong.
   try {
-    run('git', ['push', 'origin', RELEASE_BRANCH, '--follow-tags']);
+    run('git', ['push', '--atomic', 'origin', RELEASE_BRANCH, '--follow-tags']);
   } catch (err) {
     console.error(
       `\nPush failed. The commit and tag are still local — undo them with:\n  git tag -d ${tag}\n  git reset --hard HEAD~1\n`,
