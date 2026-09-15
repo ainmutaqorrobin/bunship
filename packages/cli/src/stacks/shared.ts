@@ -64,6 +64,10 @@ function isLintFormatDep(dep: string): boolean {
     dep === 'prettier' ||
     dep === 'oxlint' ||
     dep === 'oxfmt' ||
+    // oxlint-tsgolint: the type-aware companion @nestjs/schematics >=12.0.2 ships next to
+    // oxlint. Only `oxlint --type-aware` references it, so once the per-app lint script goes
+    // it is an orphan that knip fails the generated repo on.
+    dep.startsWith('oxlint-') ||
     dep === 'typescript-eslint' ||
     dep === 'globals' || // only ever present for ESLint configs in scaffolded apps
     dep === '@next/eslint-plugin-next' ||
@@ -100,9 +104,11 @@ export async function ensureAppPackageJson(ctx: AppCtx, adapter: StackAdapter): 
   pkg.name = ctx.pkgName;
   pkg.private = true;
   pkg.scripts ??= {};
-  // Per-app lint/format scripts are replaced by the root oxc toolchain.
+  // Per-app lint/format scripts are replaced by the root oxc toolchain. Scaffolders now ship
+  // oxlint/oxfmt scripts too (nest 12, create-vite 9), and those would break once their
+  // per-app deps are stripped — `oxlint --type-aware` needs oxlint-tsgolint, which goes.
   for (const [key, command] of Object.entries(pkg.scripts)) {
-    if (/\b(?:eslint|prettier|biome)\b/.test(command)) {
+    if (/\b(?:eslint|prettier|biome|oxlint|oxfmt)\b/.test(command)) {
       delete pkg.scripts[key];
       continue;
     }
