@@ -1,4 +1,4 @@
-import type { ProjectConfig, StackId } from './config/schema';
+import type { AgentId, ProjectConfig, StackId } from './config/schema';
 
 export interface ManifestApp {
   stack: StackId;
@@ -26,6 +26,8 @@ export interface Manifest {
   scripts: Record<string, string>;
   docker: { compose: string; composeDev: string; services: string[] } | null;
   cicd: { workflows: string[]; requiredSecrets: string[]; environments: string[] } | null;
+  /** After-edit oxlint/oxfmt hooks written for coding agents; null = none requested. */
+  agentHooks: { agents: AgentId[]; script: string; files: string[] } | null;
   git: { initialized: boolean; committed: boolean };
   nextSteps: string[];
   error?: { step: string; message: string; hint?: string; tail?: string[] };
@@ -37,6 +39,7 @@ export interface ManifestParts {
   bunLinker: 'isolated' | 'hoisted';
   docker: Manifest['docker'];
   cicd: Manifest['cicd'];
+  agentHooks: Manifest['agentHooks'];
   git: Manifest['git'];
 }
 
@@ -77,6 +80,7 @@ export function buildManifest(
     scripts: parts.scripts,
     docker: parts.docker,
     cicd: parts.cicd,
+    agentHooks: parts.agentHooks,
     git: parts.git,
     nextSteps,
     ...(error ? { error } : {}),

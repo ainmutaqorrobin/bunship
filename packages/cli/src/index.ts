@@ -5,6 +5,7 @@ import { Command, Option } from 'commander';
 
 import { BIN_NAME } from './branding';
 import type { RawFlags } from './config/resolve';
+import { AGENT_IDS } from './config/schema';
 import { run } from './run';
 import { selftest } from './selftest';
 
@@ -36,10 +37,14 @@ program
   .option('--no-docker', 'skip Docker')
   .option('--cicd', 'generate GitHub Actions CI + VPS deploy workflows (implies --docker)')
   .option('--no-cicd', 'skip CI/CD workflows')
+  .option(
+    '--agents <list>',
+    `format-on-edit hooks for AI coding agents, comma-separated: ${AGENT_IDS.join(', ')} or none`,
+  )
   .option('--no-git', 'skip git init/commit (also skips husky hooks)')
   .option('--no-install', 'skip bun install')
   .option('--json', 'agent mode: non-interactive, prints a machine-readable manifest on stdout')
-  .option('-y, --yes', 'non-interactive with defaults (next + nest + docker + cicd)')
+  .option('-y, --yes', 'non-interactive with defaults (next + nest + docker + cicd + claude hooks)')
   .option('--dry-run', 'resolve config and print the manifest without writing anything')
   .option('--force', 'allow scaffolding into a non-empty directory')
   .option('--keep-on-error', 'do not delete the target directory when a step fails')

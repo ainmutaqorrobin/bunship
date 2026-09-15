@@ -9,6 +9,7 @@ const cfg: ProjectConfig = {
   stacks: { web: 'next', mobile: null, api: 'nest' },
   docker: true,
   cicd: false,
+  agents: ['claude'],
   git: true,
   install: false,
   output: 'json',
@@ -33,6 +34,11 @@ describe('buildManifest', () => {
           services: ['web', 'api'],
         },
         cicd: null,
+        agentHooks: {
+          agents: ['claude'],
+          script: 'scripts/agent-format.ts',
+          files: ['.claude/settings.json'],
+        },
         git: { initialized: true, committed: true },
       },
       true,
@@ -40,6 +46,7 @@ describe('buildManifest', () => {
     expect(m.ok).toBe(true);
     expect(m.tooling.bunLinker).toBe('hoisted');
     expect(m.docker?.services).toEqual(['web', 'api']);
+    expect(m.agentHooks?.files).toEqual(['.claude/settings.json']);
     // install:false ⇒ the manifest must tell the agent to install
     expect(m.nextSteps.some((s) => s.startsWith('bun install'))).toBe(true);
     expect(m.error).toBeUndefined();
@@ -55,6 +62,7 @@ describe('buildManifest', () => {
         bunLinker: 'hoisted',
         docker: null,
         cicd: null,
+        agentHooks: null,
         git: { initialized: false, committed: false },
       },
       false,

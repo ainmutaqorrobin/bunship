@@ -1,6 +1,7 @@
 import * as p from '@clack/prompts';
 
-import type { ApiStack, MobileStack, WebStack } from './config/schema';
+import { AGENT_HOOKS } from './agents';
+import type { AgentId, ApiStack, MobileStack, WebStack } from './config/schema';
 
 // Some bundlers have dropped clack's `isCancel` runtime export (bombshell-dev/clack#470).
 // This module owns all cancel handling; `--selftest` verifies the bundle at build time.
@@ -20,6 +21,11 @@ function guard<T>(value: T | symbol): T {
   return value as T;
 }
 
+// The `--yes` defaults are the recommendations; every prompt marks its default so a
+// first-time user can just press Enter down the list.
+const RECOMMENDED = ' (recommended)';
+const YES_RECOMMENDED = { active: `Yes${RECOMMENDED}`, inactive: 'No' };
+
 export interface InteractivePre {
   dirArg?: string;
   web?: WebStack | 'none';
@@ -27,6 +33,7 @@ export interface InteractivePre {
   api?: ApiStack | 'none';
   docker?: boolean;
   cicd?: boolean;
+  agents?: AgentId[];
 }
 
 export interface InteractiveAnswers {
@@ -36,6 +43,7 @@ export interface InteractiveAnswers {
   api: ApiStack | 'none';
   docker: boolean;
   cicd: boolean;
+  agents: AgentId[];
 }
 
 /** Ask only for what the CLI flags did not already provide. */
@@ -62,7 +70,7 @@ export async function collectInteractive(
         message: 'Web frontend?',
         initialValue: 'next',
         options: [
-          { value: 'next', label: 'Next.js', hint: 'React, SSR, App Router' },
+          { value: 'next', label: `Next.js${RECOMMENDED}`, hint: 'React, SSR, App Router' },
           { value: 'react-vite', label: 'React + Vite', hint: 'SPA' },
           { value: 'nuxt', label: 'Nuxt', hint: 'Vue, SSR' },
           { value: 'none', label: 'None' },
@@ -77,7 +85,7 @@ export async function collectInteractive(
         message: 'Mobile app?',
         initialValue: 'none',
         options: [
-          { value: 'none', label: 'None' },
+          { value: 'none', label: `None${RECOMMENDED}`, hint: 'web + API first; mobile can wait' },
           { value: 'expo', label: 'Expo', hint: 'React Native + expo-router' },
         ],
       }),
@@ -90,7 +98,7 @@ export async function collectInteractive(
         message: 'API backend?',
         initialValue: 'nest',
         options: [
-          { value: 'nest', label: 'NestJS', hint: 'structured, batteries included' },
+          { value: 'nest', label: `NestJS${RECOMMENDED}`, hint: 'structured, batteries included' },
           { value: 'hono', label: 'Hono', hint: 'ultralight, Bun-native' },
           { value: 'express', label: 'Express', hint: 'the classic' },
           { value: 'fastify', label: 'Fastify', hint: 'fast, schema-driven' },
@@ -105,6 +113,7 @@ export async function collectInteractive(
       await p.confirm({
         message: 'Docker? (Dockerfiles + docker compose)',
         initialValue: true,
+        ...YES_RECOMMENDED,
       }),
     );
 
@@ -114,9 +123,25 @@ export async function collectInteractive(
         await p.confirm({
           message: 'CI/CD? (GitHub Actions: checks on PR + VPS deploy pipeline)',
           initialValue: true,
+          ...YES_RECOMMENDED,
         }),
       ))
     : false;
+
+  const agents =
+    pre.agents ??
+    guard(
+      await p.multiselect<AgentId>({
+        message: 'Format-on-edit hooks for AI coding agents? (space to toggle)',
+        initialValues: ['claude'],
+        required: false,
+        options: Object.values(AGENT_HOOKS).map((h) => ({
+          value: h.id,
+          label: h.id === 'claude' ? `${h.label}${RECOMMENDED}` : h.label,
+          hint: h.hint,
+        })),
+      }),
+    );
 
   const summary = [
     `web      ${web}`,
@@ -124,6 +149,7 @@ export async function collectInteractive(
     `api      ${api}`,
     `docker   ${docker ? 'yes' : 'no'}`,
     `ci/cd    ${cicd ? 'yes' : 'no'}`,
+    `agents   ${agents.length > 0 ? agents.join(', ') : 'none'}`,
   ].join('\n');
   p.note(summary, `Creating ./${dir}`);
 
@@ -133,5 +159,5 @@ export async function collectInteractive(
     process.exit(0);
   }
 
-  return { dir, web, mobile, api, docker, cicd };
+  return { dir, web, mobile, api, docker, cicd, agents };
 }

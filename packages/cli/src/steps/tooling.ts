@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 
+import { AGENT_FORMAT_SCRIPT, selectedAgentHooks } from '../agents';
 import { BIN_NAME } from '../branding';
 import { readJson, writeFileLf, writeJson } from '../fsx';
 import { selectedAdapters } from '../stacks/registry';
@@ -57,6 +58,7 @@ export const tooling: Step = {
     const { cfg } = rc;
     const root = cfg.targetDir;
     const adapters = selectedAdapters(cfg);
+    const agentHooks = selectedAgentHooks(cfg.agents);
 
     // Aggregate adapter fragments.
     const oxlintPlugins = new Set(BASE_OXLINT_PLUGINS);
@@ -84,6 +86,8 @@ export const tooling: Step = {
     // fail under isolated on Windows; Metro requires flat). Revisit per-stack later.
     hoisted = true;
     rc.bunLinker = hoisted ? 'hoisted' : 'isolated';
+    rc.formatExtensions = [...formatExtensions].toSorted();
+    for (const h of agentHooks) gitignoreExtra.push(...(h.gitignore ?? []));
 
     // Root package.json
     task.update('package.json');
@@ -157,6 +161,10 @@ export const tooling: Step = {
       printWidth: 100,
       singleQuote: true,
     });
+    if (agentHooks.length > 0) {
+      // The hook script is only ever spawned by agent configs, which knip cannot see.
+      knipWorkspaces['.'] = { entry: [AGENT_FORMAT_SCRIPT] };
+    }
     await writeJson(join(root, 'knip.json'), {
       $schema: 'https://unpkg.com/knip@6/schema.json',
       workspaces: knipWorkspaces,
@@ -240,6 +248,20 @@ export const tooling: Step = {
             'source frozen at build time.',
           ]
         : []),
+      ...(agentHooks.length > 0
+        ? [
+            '',
+            '## AI agent hooks',
+            '',
+            `Every edit made by ${agentHooks.map((h) => h.label).join(', ')} is run through`,
+            `\`oxlint --fix\` + \`oxfmt\` automatically (\`${AGENT_FORMAT_SCRIPT}\`, same rules as`,
+            'lint-staged), so agent output is already clean before you review it.',
+            '',
+            '| Agent | Hook |',
+            '| --- | --- |',
+            ...agentHooks.map((h) => `| ${h.label} | \`${h.files[0]!.path}\` |`),
+          ]
+        : []),
       '',
       '## Toolchain',
       '',
@@ -297,6 +319,12 @@ export const tooling: Step = {
       ...(cfg.git
         ? [
             '- Pre-commit runs lint-staged (oxlint --fix + oxfmt on staged files); pre-push runs `bun run check`.',
+          ]
+        : []),
+      ...(agentHooks.length > 0
+        ? [
+            `- Your after-edit hook (${agentHooks.map((h) => h.hint).join('; ')}) already runs`,
+            `  \`${AGENT_FORMAT_SCRIPT}\` on every file you touch — do not re-run oxfmt/oxlint by hand.`,
           ]
         : []),
     ].join('\n');

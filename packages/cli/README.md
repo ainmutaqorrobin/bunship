@@ -47,6 +47,10 @@ my-startup/
 ├── AGENTS.md + CLAUDE.md    conventions for AI coding agents
 ├── .gitignore · .gitattributes · .env.example · README.md
 │
+│   with --agents (default: claude):
+├── scripts/agent-format.ts  oxlint --fix + oxfmt on every file an agent edits
+├── .claude/settings.json    …and one tiny hook config per chosen agent
+│
 │   with --docker:
 ├── apps/*/Dockerfile        per-app production images
 ├── compose.yaml             local prod-parity: bun run docker:prod
@@ -108,8 +112,9 @@ stays the path.
 | `--api <nest\|express\|hono\|fastify\|none>`                          | API backend                                                 |
 | `--docker` / `--no-docker`                                            | Dockerfiles + compose.yaml                                  |
 | `--cicd` / `--no-cicd`                                                | GitHub Actions CI + VPS deploy pipeline (implies docker)    |
+| `--agents <claude,cursor,copilot,codex,gemini,windsurf\|none>`        | Format-on-edit hooks for AI coding agents (see below)       |
 | `--json`                                                              | Agent mode: no prompts, stdout is exactly one JSON manifest |
-| `-y, --yes`                                                           | Defaults: next + nest + docker + cicd                       |
+| `-y, --yes`                                                           | Defaults: next + nest + docker + cicd + claude hooks        |
 | `--dry-run`                                                           | Print the manifest without writing anything                 |
 | `--no-git`, `--no-install`, `--force`, `--verbose`, `--keep-on-error` | What they say                                               |
 
@@ -120,6 +125,32 @@ stdout carries a single JSON manifest (apps, ports, scripts, required deploy sec
 steps), exit codes are meaningful (0 ok / 1 pipeline / 2 usage), and the generated repo
 contains an `AGENTS.md` so agents don't re-derive conventions. Boilerplate comes from
 official scaffolders, not from model output — that's the whole point.
+
+## Format-on-edit hooks for AI agents
+
+An agent that edits a file rarely formats it. `--agents` fixes that at the source: every
+file the agent touches is run through `oxlint --fix` + `oxfmt` the moment the edit lands,
+using the exact rules lint-staged applies at commit — so by the time you look at the
+diff, it is already clean.
+
+One shared script does the work (`scripts/agent-format.ts`, run by bun, no extra
+dependencies), and each agent gets a two-line config pointing at it:
+
+| Agent                        | Config written              | Fires on                        |
+| ---------------------------- | --------------------------- | ------------------------------- |
+| Claude Code (recommended)    | `.claude/settings.json`     | `PostToolUse` for Edit / Write  |
+| Cursor                       | `.cursor/hooks.json`        | `afterFileEdit`                 |
+| GitHub Copilot (CLI + agent) | `.github/hooks/format.json` | `postToolUse` for edit / create |
+| OpenAI Codex                 | `.codex/hooks.json`         | `PostToolUse` for apply_patch   |
+| Gemini CLI                   | `.gemini/settings.json`     | `AfterTool` for write / replace |
+| Windsurf                     | `.windsurf/hooks.json`      | `post_write_code`               |
+
+Pick several (`--agents claude,cursor`) if your team is mixed — the configs are
+independent and all commit cleanly. The script also works by hand:
+`bun scripts/agent-format.ts path/to/file.ts`.
+
+Interactive runs preselect Claude Code; `--yes` picks it; `--json` writes none unless you
+ask (agents shouldn't get hooks they didn't request).
 
 ## Requirements
 
