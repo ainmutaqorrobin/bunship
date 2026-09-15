@@ -1,6 +1,6 @@
 {
   "name": "create-bunship",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Scaffold and ship production-ready Bun monorepos using official framework scaffolders",
   "keywords": [
     "bun",
