@@ -19,6 +19,7 @@ function partsFrom(rc: RunContext): ManifestParts {
     bunLinker: rc.bunLinker,
     docker: rc.docker,
     cicd: rc.cicd,
+    agentHooks: rc.agentHooks,
     git: rc.git,
   };
 }
@@ -42,6 +43,7 @@ function dryRunManifest(cfg: ProjectConfig, version: string): Manifest {
       bunLinker: adapters.some((a) => a.tooling.hoistedLinker) ? 'hoisted' : 'isolated',
       docker: null,
       cicd: null,
+      agentHooks: null,
       git: { initialized: false, committed: false },
     },
     true,

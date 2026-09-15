@@ -59,7 +59,7 @@ workflow on a `v*` tag. Never bump the version, tag, or publish by hand.
 `src/steps/pipeline.ts` runs an ordered `Step[]`:
 
 ```
-preflight → scaffoldRoot → scaffoldApps → postProcess → tooling → docker → cicd → finalize
+preflight → scaffoldRoot → scaffoldApps → postProcess → tooling → agentHooks → docker → cicd → finalize
 ```
 
 Each `Step` has `enabled(cfg)` and `run(rc, task)`. They mutate a single `RunContext`
@@ -112,6 +112,24 @@ on PATH is what actually builds the generated repo. Adapters declare `minNode` f
 `preflight` fails fast with the version it found. Floors are plain minimums rather than upstream
 semver ranges on purpose: this package ships **zero runtime dependencies** (tsdown bundles
 everything via `deps.alwaysBundle`), so there's no semver library to lean on.
+
+### Agent format-on-edit hooks
+
+`src/agents.ts` is a registry of coding agents (`AgentId`) → the hook config file each one
+reads, all pointing at one shared `scripts/agent-format.ts` (templated from
+`templates/agent-hooks/`). The `agent-hooks` step writes them; `tooling` runs first because
+it owns two things the hooks depend on: the oxfmt extension list the script mirrors
+(`rc.formatExtensions`) and the knip `entry` for the script (nothing imports it, so knip
+would otherwise flag it as an unused file and break the generated repo's own gate).
+
+The script deliberately does **not** branch per agent. Every agent pipes a JSON description
+of the edit on stdin in its own shape (`tool_input.file_path`, `file_path`,
+`tool_info.file_path`, Copilot's `toolArgs` as a JSON _string_, Codex's apply_patch body);
+it walks the whole payload for path-like keys and parses `*** Update File:` lines, so a new
+agent is a registry entry, not a code change. Contract: run under bun, exit 0 always, write
+nothing to stdout (several agents parse stdout as JSON). Adding an agent means verifying its
+documented hook event and stdin shape first — Kiro and OpenCode were left out because
+their docs could not be pinned down, not because they are unsupported in principle.
 
 ### Output contract
 

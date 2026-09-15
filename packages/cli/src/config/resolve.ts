@@ -5,6 +5,8 @@ import { UsageError } from '../errors';
 import { canonicalizePath } from '../fsx';
 import { collectInteractive } from '../prompts';
 import {
+  AGENT_IDS,
+  type AgentId,
   type ApiStack,
   type MobileStack,
   type ProjectConfig,
@@ -21,6 +23,8 @@ export interface RawFlags {
   api?: string;
   docker?: boolean;
   cicd?: boolean;
+  /** Comma-separated agent ids, or "none". */
+  agents?: string;
   git: boolean;
   install: boolean;
   json?: boolean;
@@ -34,6 +38,24 @@ export interface RawFlags {
 function noneToNull<T extends string>(value: string | undefined): T | null | undefined {
   if (value === undefined) return undefined;
   return value === 'none' ? null : (value as T);
+}
+
+/** `--agents claude,cursor` → ids; `--agents none` → []; not passed → undefined. */
+function parseAgents(value: string | undefined): AgentId[] | undefined {
+  if (value === undefined) return undefined;
+  const ids = value
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter((s) => s !== '');
+  if (ids.length === 0 || (ids.length === 1 && ids[0] === 'none')) return [];
+  const known = new Set<string>(AGENT_IDS);
+  const unknown = ids.filter((id) => !known.has(id));
+  if (unknown.length > 0) {
+    throw new UsageError(
+      `Unknown agent${unknown.length > 1 ? 's' : ''} for --agents: ${unknown.join(', ')}. Choose from ${AGENT_IDS.join(', ')} (or none).`,
+    );
+  }
+  return [...new Set(ids as AgentId[])];
 }
 
 export async function resolveConfig(
@@ -50,6 +72,7 @@ export async function resolveConfig(
   let api = noneToNull<ApiStack>(flags.api);
   let docker = flags.docker;
   let cicd = flags.cicd;
+  let agents = parseAgents(flags.agents);
 
   if (interactive) {
     const answers = await collectInteractive(
@@ -60,6 +83,7 @@ export async function resolveConfig(
         api: flags.api as ApiStack | 'none' | undefined,
         docker,
         cicd,
+        agents,
       },
       BIN_NAME,
     );
@@ -69,6 +93,7 @@ export async function resolveConfig(
     api = answers.api === 'none' ? null : answers.api;
     docker = answers.docker;
     cicd = answers.cicd;
+    agents = answers.agents;
   } else {
     if (!dir) {
       throw new UsageError(
@@ -81,6 +106,7 @@ export async function resolveConfig(
       api = api === undefined ? YES_DEFAULTS.api : api;
       docker ??= YES_DEFAULTS.docker;
       cicd ??= YES_DEFAULTS.cicd;
+      agents ??= [...YES_DEFAULTS.agents];
     } else {
       // Strict agent mode: anything not stated is off (docker resolves below,
       // AFTER the cicd implication — `--cicd` alone must imply docker, not conflict).
@@ -88,6 +114,7 @@ export async function resolveConfig(
       mobile ??= null;
       api ??= null;
       cicd ??= false;
+      agents ??= [];
     }
   }
 
@@ -106,6 +133,7 @@ export async function resolveConfig(
     stacks: { web: web ?? null, mobile: mobile ?? null, api: api ?? null },
     docker: docker ?? false,
     cicd: cicd ?? false,
+    agents: agents ?? [],
     git: flags.git,
     install: flags.install,
     output,

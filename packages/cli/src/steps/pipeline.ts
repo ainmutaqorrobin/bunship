@@ -1,5 +1,6 @@
 import type { RunContext } from '../context';
 import { toScaffoldError, UsageError } from '../errors';
+import { agentHooks } from './agent-hooks';
 import { cicd } from './cicd';
 import { docker } from './docker';
 import { finalize } from './finalize';
@@ -16,6 +17,7 @@ const STEPS: Step[] = [
   scaffoldApps,
   postProcess,
   tooling,
+  agentHooks,
   docker,
   cicd,
   finalize,

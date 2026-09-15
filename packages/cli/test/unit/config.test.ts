@@ -57,3 +57,36 @@ describe('resolveConfig', () => {
     ).rejects.toBeInstanceOf(UsageError);
   });
 });
+
+describe('resolveConfig --agents', () => {
+  test('json mode without --agents writes no hooks (strict: unstated is off)', async () => {
+    const cfg = await resolveConfig('demo-app', { ...base, json: true, api: 'hono' });
+    expect(cfg.agents).toEqual([]);
+  });
+
+  test('--yes defaults to a Claude Code hook', async () => {
+    const cfg = await resolveConfig('demo-app', { ...base, yes: true });
+    expect(cfg.agents).toEqual(['claude']);
+  });
+
+  test('comma list is trimmed, lower-cased and de-duplicated', async () => {
+    const cfg = await resolveConfig('demo-app', {
+      ...base,
+      json: true,
+      api: 'hono',
+      agents: ' Cursor, claude ,cursor',
+    });
+    expect(cfg.agents).toEqual(['cursor', 'claude']);
+  });
+
+  test('"none" clears the --yes default', async () => {
+    const cfg = await resolveConfig('demo-app', { ...base, yes: true, agents: 'none' });
+    expect(cfg.agents).toEqual([]);
+  });
+
+  test('unknown agent is a usage error naming the valid ids', async () => {
+    await expect(
+      resolveConfig('demo-app', { ...base, json: true, api: 'hono', agents: 'claude,kiro' }),
+    ).rejects.toThrow(/Unknown agent for --agents: kiro.*claude/);
+  });
+});

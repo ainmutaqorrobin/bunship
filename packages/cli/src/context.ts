@@ -14,8 +14,11 @@ export interface RunContext {
   apps: ManifestApp[];
   rootScripts: Record<string, string>;
   bunLinker: 'isolated' | 'hoisted';
+  /** Extensions oxfmt formats in this repo (set by tooling; agent-hooks mirrors it). */
+  formatExtensions: string[];
   docker: Manifest['docker'];
   cicd: Manifest['cicd'];
+  agentHooks: Manifest['agentHooks'];
   git: { initialized: boolean; committed: boolean };
 }
 
@@ -32,8 +35,10 @@ export function createRunContext(
     apps: [],
     rootScripts: {},
     bunLinker: 'isolated',
+    formatExtensions: [],
     docker: null,
     cicd: null,
+    agentHooks: null,
     git: { initialized: false, committed: false },
   };
 }
