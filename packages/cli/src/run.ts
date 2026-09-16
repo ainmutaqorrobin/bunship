@@ -20,6 +20,7 @@ function partsFrom(rc: RunContext): ManifestParts {
     docker: rc.docker,
     cicd: rc.cicd,
     agentHooks: rc.agentHooks,
+    agentSkills: rc.agentSkills,
     git: rc.git,
   };
 }
@@ -44,6 +45,7 @@ function dryRunManifest(cfg: ProjectConfig, version: string): Manifest {
       docker: null,
       cicd: null,
       agentHooks: null,
+      agentSkills: null,
       git: { initialized: false, committed: false },
     },
     true,

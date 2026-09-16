@@ -6,10 +6,11 @@ import { canonicalizePath } from '../fsx';
 import { collectInteractive } from '../prompts';
 import {
   AGENT_IDS,
-  type AgentId,
   type ApiStack,
   type MobileStack,
   type ProjectConfig,
+  SKILL_PACK_IDS,
+  type SkillPackId,
   type WebStack,
   YES_DEFAULTS,
 } from './schema';
@@ -25,6 +26,8 @@ export interface RawFlags {
   cicd?: boolean;
   /** Comma-separated agent ids, or "none". */
   agents?: string;
+  /** Comma-separated skill pack ids, or "none". */
+  skills?: string;
   git: boolean;
   install: boolean;
   json?: boolean;
@@ -41,21 +44,26 @@ function noneToNull<T extends string>(value: string | undefined): T | null | und
 }
 
 /** `--agents claude,cursor` → ids; `--agents none` → []; not passed → undefined. */
-function parseAgents(value: string | undefined): AgentId[] | undefined {
+function parseIdList<T extends string>(
+  flag: string,
+  noun: string,
+  valid: readonly T[],
+  value: string | undefined,
+): T[] | undefined {
   if (value === undefined) return undefined;
   const ids = value
     .split(',')
     .map((s) => s.trim().toLowerCase())
     .filter((s) => s !== '');
   if (ids.length === 0 || (ids.length === 1 && ids[0] === 'none')) return [];
-  const known = new Set<string>(AGENT_IDS);
+  const known = new Set<string>(valid);
   const unknown = ids.filter((id) => !known.has(id));
   if (unknown.length > 0) {
     throw new UsageError(
-      `Unknown agent${unknown.length > 1 ? 's' : ''} for --agents: ${unknown.join(', ')}. Choose from ${AGENT_IDS.join(', ')} (or none).`,
+      `Unknown ${noun}${unknown.length > 1 ? 's' : ''} for ${flag}: ${unknown.join(', ')}. Choose from ${valid.join(', ')} (or none).`,
     );
   }
-  return [...new Set(ids as AgentId[])];
+  return [...new Set(ids as T[])];
 }
 
 export async function resolveConfig(
@@ -72,7 +80,8 @@ export async function resolveConfig(
   let api = noneToNull<ApiStack>(flags.api);
   let docker = flags.docker;
   let cicd = flags.cicd;
-  let agents = parseAgents(flags.agents);
+  let agents = parseIdList('--agents', 'agent', AGENT_IDS, flags.agents);
+  let skills = parseIdList('--skills', 'skill pack', SKILL_PACK_IDS, flags.skills);
 
   if (interactive) {
     const answers = await collectInteractive(
@@ -84,6 +93,7 @@ export async function resolveConfig(
         docker,
         cicd,
         agents,
+        skills,
       },
       BIN_NAME,
     );
@@ -94,6 +104,7 @@ export async function resolveConfig(
     docker = answers.docker;
     cicd = answers.cicd;
     agents = answers.agents;
+    skills = answers.skills;
   } else {
     if (!dir) {
       throw new UsageError(
@@ -107,6 +118,8 @@ export async function resolveConfig(
       docker ??= YES_DEFAULTS.docker;
       cicd ??= YES_DEFAULTS.cicd;
       agents ??= [...YES_DEFAULTS.agents];
+      // Skills ride on agents: `--yes --agents none` must not turn into a usage error.
+      skills ??= agents.length > 0 ? [...YES_DEFAULTS.skills] : [];
     } else {
       // Strict agent mode: anything not stated is off (docker resolves below,
       // AFTER the cicd implication — `--cicd` alone must imply docker, not conflict).
@@ -115,6 +128,7 @@ export async function resolveConfig(
       api ??= null;
       cicd ??= false;
       agents ??= [];
+      skills ??= [];
     }
   }
 
@@ -134,6 +148,7 @@ export async function resolveConfig(
     docker: docker ?? false,
     cicd: cicd ?? false,
     agents: agents ?? [],
+    skills: (skills ?? []) as SkillPackId[],
     git: flags.git,
     install: flags.install,
     output,

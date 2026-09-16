@@ -25,6 +25,22 @@ export const reactVite: StackAdapter = {
   scripts: {
     typecheck: 'tsc -b',
   },
+  skills: [
+    {
+      source: 'vercel-labs/agent-skills',
+      name: 'vercel-react-best-practices',
+      by: 'Vercel',
+      about:
+        'React performance rules (bundle size, re-renders, async patterns). Load before writing or reviewing React code; the `server-*` rules are Next.js-only and do not apply here.',
+    },
+    {
+      source: 'vercel-labs/agent-skills',
+      name: 'vercel-composition-patterns',
+      by: 'Vercel',
+      about:
+        'React composition patterns (compound components, context, render props) that keep a growing SPA free of prop drilling and boolean-prop sprawl.',
+    },
+  ],
   tooling: {
     oxlintPlugins: ['react', 'jsx-a11y'],
     oxlintRules: {

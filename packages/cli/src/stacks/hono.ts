@@ -37,6 +37,15 @@ export const hono: StackAdapter = {
     start: 'bun src/index.ts',
     typecheck: 'tsc --noEmit',
   },
+  skills: [
+    {
+      source: 'honojs/skills',
+      name: 'hono',
+      by: 'Hono',
+      about:
+        'Hono routing, middleware, validators, RPC client and runtime adapters. Load before writing Hono code.',
+    },
+  ],
   tooling: {},
   docker: {
     template: 'bun-api.Dockerfile.tpl',

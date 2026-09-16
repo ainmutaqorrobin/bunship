@@ -47,6 +47,23 @@ export const nuxt: StackAdapter = {
   scripts: {
     typecheck: 'nuxt typecheck',
   },
+  // antfu/skills is generated from the official Vue/Nuxt docs by a core-team member —
+  // the closest thing to first-party until nuxt/* ships framework skills of its own.
+  skills: [
+    {
+      source: 'antfu/skills',
+      name: 'nuxt',
+      by: 'Anthony Fu (Vue/Nuxt core)',
+      about:
+        'Nuxt 4: file-based routing, server routes, middleware, modules, config. Load before writing Nuxt code.',
+    },
+    {
+      source: 'antfu/skills',
+      name: 'vue',
+      by: 'Anthony Fu (Vue/Nuxt core)',
+      about: 'Vue 3 reactivity, Composition API, components and composables.',
+    },
+  ],
   tooling: {
     formatExtensions: ['vue'],
     gitignore: ['.nuxt/', '.output/'],

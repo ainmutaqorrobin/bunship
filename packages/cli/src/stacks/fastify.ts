@@ -90,6 +90,15 @@ export const fastify: StackAdapter = {
     await writeFileLf(join(ctx.appDir, 'src', 'routes', 'health.ts'), HEALTH_ROUTE);
   },
   scripts: {},
+  skills: [
+    {
+      source: 'mcollina/skills',
+      name: 'fastify-best-practices',
+      by: 'Matteo Collina (Fastify author)',
+      about:
+        'Fastify plugins, routes, JSON Schema validation, hooks, error handling, Pino logging, TypeScript. Load before writing Fastify code.',
+    },
+  ],
   tooling: {
     oxlintOverrides: [
       {

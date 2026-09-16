@@ -1,6 +1,7 @@
 import type { RunContext } from '../context';
 import { toScaffoldError, UsageError } from '../errors';
 import { agentHooks } from './agent-hooks';
+import { agentSkills } from './agent-skills';
 import { cicd } from './cicd';
 import { docker } from './docker';
 import { finalize } from './finalize';
@@ -16,6 +17,9 @@ const STEPS: Step[] = [
   scaffoldRoot,
   scaffoldApps,
   postProcess,
+  // Before tooling: AGENTS.md and the lint/format/knip ignores describe what agent-skills
+  // actually installed, not what was planned.
+  agentSkills,
   tooling,
   agentHooks,
   docker,

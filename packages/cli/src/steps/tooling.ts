@@ -1,8 +1,10 @@
+import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { AGENT_FORMAT_SCRIPT, selectedAgentHooks } from '../agents';
 import { BIN_NAME } from '../branding';
 import { readJson, writeFileLf, writeJson } from '../fsx';
+import { plannedSkills, SKILLS_LOCK_FILE, skillDirs } from '../skills';
 import { selectedAdapters } from '../stacks/registry';
 import { BUN_ENGINES, GENERATED_DEV_DEPS, GENERATED_GIT_DEV_DEPS } from '../versions';
 import type { Step } from './types';
@@ -50,6 +52,18 @@ async function pruneIgnoredDeps(
   return kept.length > 0 ? { ...rest, ignoreDependencies: kept } : rest;
 }
 
+const SCRIPT_FILE_RE = /\.(?:[cm]?js|[cm]?ts|jsx|tsx)$/i;
+
+/**
+ * Whether a skill tree bundles any script. Most are pure Markdown, and knip reports an
+ * `ignore` entry that matches nothing as a configuration hint in every run — so the
+ * ignore is only written for directories that would otherwise surface unused files.
+ */
+async function containsScripts(dir: string): Promise<boolean> {
+  const entries = await readdir(dir, { withFileTypes: true, recursive: true });
+  return entries.some((e) => e.isFile() && SCRIPT_FILE_RE.test(e.name));
+}
+
 export const tooling: Step = {
   id: 'tooling',
   title: 'Wiring root toolchain (bun, oxc, knip, husky)',
@@ -59,6 +73,18 @@ export const tooling: Step = {
     const root = cfg.targetDir;
     const adapters = selectedAdapters(cfg);
     const agentHooks = selectedAgentHooks(cfg.agents);
+    // What agent-skills actually installed (it runs first), joined back to the plan for
+    // the maintainer/about columns the AGENTS.md table shows.
+    const installed = new Set(rc.agentSkills?.installed.map((s) => s.name) ?? []);
+    const skills = plannedSkills(cfg).filter((s) => installed.has(s.name));
+    // Third-party SKILL.md trees are upstream content: formatting or linting them would
+    // dirty the copies the lock file hashes, and knip would flag any bundled script as
+    // an unused file. Keep every tool out of those directories.
+    const skillIgnores = skills.length > 0 ? skillDirs(cfg.agents).map((d) => `${d}/`) : [];
+    const knipSkillIgnores: string[] = [];
+    for (const d of skillIgnores) {
+      if (await containsScripts(join(root, d))) knipSkillIgnores.push(`${d}**`);
+    }
 
     // Aggregate adapter fragments.
     const oxlintPlugins = new Set(BASE_OXLINT_PLUGINS);
@@ -66,10 +92,12 @@ export const tooling: Step = {
     const oxlintOverrides: Array<Record<string, unknown>> = [];
     const formatExtensions = new Set(BASE_FORMAT_EXTENSIONS);
     const gitignoreExtra: string[] = [];
+    const agentsMdExtra: string[] = [];
     const knipWorkspaces: Record<string, unknown> = { '.': {} };
     let hoisted = false;
     for (const a of adapters) {
       for (const p of a.tooling.oxlintPlugins ?? []) oxlintPlugins.add(p);
+      agentsMdExtra.push(...(a.tooling.agentsMd ?? []));
       Object.assign(oxlintRules, a.tooling.oxlintRules ?? {});
       oxlintOverrides.push(...(a.tooling.oxlintOverrides ?? []));
       for (const e of a.tooling.formatExtensions ?? []) formatExtensions.add(e);
@@ -154,12 +182,15 @@ export const tooling: Step = {
         '**/.nuxt',
         '**/.output',
         '**/.expo',
+        ...skillIgnores,
       ],
     });
     await writeJson(join(root, '.oxfmtrc.json'), {
       $schema: './node_modules/oxfmt/configuration_schema.json',
       printWidth: 100,
       singleQuote: true,
+      // skills-lock.json is rewritten by `bunx skills update` in its own style.
+      ...(skillIgnores.length > 0 ? { ignorePatterns: [...skillIgnores, SKILLS_LOCK_FILE] } : {}),
     });
     if (agentHooks.length > 0) {
       // The hook script is only ever spawned by agent configs, which knip cannot see.
@@ -167,6 +198,7 @@ export const tooling: Step = {
     }
     await writeJson(join(root, 'knip.json'), {
       $schema: 'https://unpkg.com/knip@6/schema.json',
+      ...(knipSkillIgnores.length > 0 ? { ignore: knipSkillIgnores } : {}),
       workspaces: knipWorkspaces,
     });
 
@@ -325,6 +357,26 @@ export const tooling: Step = {
         ? [
             `- Your after-edit hook (${agentHooks.map((h) => h.hint).join('; ')}) already runs`,
             `  \`${AGENT_FORMAT_SCRIPT}\` on every file you touch — do not re-run oxfmt/oxlint by hand.`,
+          ]
+        : []),
+      ...agentsMdExtra,
+      ...(skills.length > 0
+        ? [
+            '',
+            '## Skills',
+            '',
+            `Best-practice skills live under ${skillDirs(cfg.agents)
+              .map((d) => `\`${d}/\``)
+              .join(', ')} (\`<name>/SKILL.md\`).`,
+            'Load the matching one BEFORE writing code for that framework: they encode conventions',
+            'and pitfalls that are not visible from the scaffolded code.',
+            '',
+            '| Skill | Maintained by | Use it for |',
+            '| --- | --- | --- |',
+            ...skills.map((s) => `| \`${s.name}\` | ${s.by} | ${s.about} |`),
+            '',
+            `- Pinned in \`${SKILLS_LOCK_FILE}\`; refresh with \`bunx skills update\`, find more at https://skills.sh.`,
+            '- Skill directories are excluded from oxlint/oxfmt/knip — never edit or format them by hand.',
           ]
         : []),
     ].join('\n');

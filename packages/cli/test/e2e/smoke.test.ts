@@ -24,8 +24,12 @@ describe.skipIf(!hasDist)('smoke: express-only scaffold via node dist', () => {
       ok: boolean;
       apps: Array<{ stack: string }>;
       tooling: { bunLinker: string };
+      agentSkills: unknown;
     };
     expect(manifest.ok).toBe(true);
+    // strict json mode ⇒ nothing fetched from skills.sh unless asked for
+    expect(manifest.agentSkills).toBeNull();
+    expect(existsSync(join(target, 'skills-lock.json'))).toBe(false);
     expect(manifest.apps).toHaveLength(1);
     expect(manifest.apps[0]?.stack).toBe('express');
     expect(manifest.tooling.bunLinker).toBe('hoisted');
@@ -120,5 +124,13 @@ describe.skipIf(!hasDist)('smoke: express-only scaffold via node dist', () => {
     expect(r.status).toBe(2);
     expect(r.stdout.trim()).toBe('');
     expect(r.stderr).toContain('Target directory is required');
+  });
+
+  test('--skills without --agents is a usage error, before anything is written', () => {
+    const target = join(mkdtempSync(join(tmpdir(), 'sf-skills-')), 'never');
+    const r = runCli([target, '--api', 'express', '--skills', 'stack', '--json']);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('--skills needs at least one agent');
+    expect(existsSync(target)).toBe(false);
   });
 });

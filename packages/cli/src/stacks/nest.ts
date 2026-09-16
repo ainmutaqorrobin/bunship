@@ -109,6 +109,17 @@ export const nest: StackAdapter = {
     start: 'node dist/main.js',
     typecheck: 'tsc --noEmit',
   },
+  // No first-party NestJS skill exists; this is the most-installed community one and is
+  // structured like Vercel's (40 rules, 10 categories). Swap it the day nestjs/* ships one.
+  skills: [
+    {
+      source: 'kadajett/agent-nestjs-skills',
+      name: 'nestjs-best-practices',
+      by: 'community (kadajett)',
+      about:
+        'NestJS modules, DI, controllers/services, guards/pipes/interceptors, error handling, testing. Load before writing Nest code.',
+    },
+  ],
   tooling: {
     oxlintRules: {
       // Empty @Module() classes are the Nest idiom.

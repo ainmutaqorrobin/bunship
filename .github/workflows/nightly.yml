@@ -38,7 +38,8 @@ jobs:
           git config --global user.email nightly@example.com
           git config --global user.name nightly
           node packages/cli/dist/index.mjs "$RUNNER_TEMP/demo" \
-            --web ${{ matrix.combo.web }} --api ${{ matrix.combo.api }} --docker --cicd --json
+            --web ${{ matrix.combo.web }} --api ${{ matrix.combo.api }} --docker --cicd \
+            --agents claude,cursor --skills stack,web-design,frontend-design --json
       - name: Generated repo must pass its own gate
         shell: bash
         working-directory: ${{ runner.temp }}/demo
@@ -80,7 +81,8 @@ jobs:
           git config --global user.email nightly@example.com
           git config --global user.name nightly
           node packages/cli/dist/index.mjs "$RUNNER_TEMP/demo" \
-            --web ${{ matrix.combo.web }} --api ${{ matrix.combo.api }} --docker --cicd --json
+            --web ${{ matrix.combo.web }} --api ${{ matrix.combo.api }} --docker --cicd \
+            --agents claude,cursor --skills stack,web-design,frontend-design --json
       - name: Generated repo must pass its own gate
         shell: bash
         working-directory: ${{ runner.temp }}/demo

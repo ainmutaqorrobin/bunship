@@ -13,6 +13,17 @@ export const express: StackAdapter = {
     await copyTemplateDir('stacks/express', ctx.appDir, { pkgName: ctx.pkgName });
   },
   scripts: {},
+  // Nothing credible exists for Express itself (like its scaffolder); the Node.js skill
+  // from a Node TSC member covers the layer that matters: async, errors, streams, shutdown.
+  skills: [
+    {
+      source: 'mcollina/skills',
+      name: 'node',
+      by: 'Matteo Collina (Node.js TSC)',
+      about:
+        'Node.js + TypeScript best practices: async patterns, error handling, streams, graceful shutdown, testing, logging.',
+    },
+  ],
   tooling: {},
   docker: {
     template: 'node-api.Dockerfile.tpl',

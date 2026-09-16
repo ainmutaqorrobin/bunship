@@ -5,7 +5,7 @@ import { Command, Option } from 'commander';
 
 import { BIN_NAME } from './branding';
 import type { RawFlags } from './config/resolve';
-import { AGENT_IDS } from './config/schema';
+import { AGENT_IDS, SKILL_PACK_IDS } from './config/schema';
 import { run } from './run';
 import { selftest } from './selftest';
 
@@ -41,10 +41,17 @@ program
     '--agents <list>',
     `format-on-edit hooks for AI coding agents, comma-separated: ${AGENT_IDS.join(', ')} or none`,
   )
+  .option(
+    '--skills <list>',
+    `best-practice skills (SKILL.md) for those agents, comma-separated: ${SKILL_PACK_IDS.join(', ')} or none (stack = one set per selected framework)`,
+  )
   .option('--no-git', 'skip git init/commit (also skips husky hooks)')
   .option('--no-install', 'skip bun install')
   .option('--json', 'agent mode: non-interactive, prints a machine-readable manifest on stdout')
-  .option('-y, --yes', 'non-interactive with defaults (next + nest + docker + cicd + claude hooks)')
+  .option(
+    '-y, --yes',
+    'non-interactive with defaults (next + nest + docker + cicd + claude hooks + stack skills)',
+  )
   .option('--dry-run', 'resolve config and print the manifest without writing anything')
   .option('--force', 'allow scaffolding into a non-empty directory')
   .option('--keep-on-error', 'do not delete the target directory when a step fails')

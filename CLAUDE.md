@@ -131,6 +131,30 @@ nothing to stdout (several agents parse stdout as JSON). Adding an agent means v
 documented hook event and stdin shape first — Kiro and OpenCode were left out because
 their docs could not be pinned down, not because they are unsupported in principle.
 
+### Agent skills
+
+`src/skills.ts` is the counterpart of `agents.ts` for [Agent Skills](https://agentskills.io):
+each `StackAdapter` declares `skills: SkillRef[]` (source repo + exact upstream name), and
+`EXTRA_SKILL_PACKS` holds the two stack-independent packs. The `agent-skills` step drives
+Vercel's `skills` CLI (`SKILLS_CLI_PIN = 'skills@1'`, canary-stripped like scaffolders) once
+per source repo with `--copy` — **`--copy` is load-bearing**: in default symlink mode the CLI
+exits 0 on Windows without Developer Mode while writing nothing for Claude Code/Windsurf.
+The step verifies every expected `<dir>/<name>/SKILL.md` exists afterwards because the CLI
+also drops a renamed skill among valid ones with exit 0. Failures degrade to a warning plus
+`agentSkills.failed` in the manifest, never a failed run.
+
+Ordering: `agent-skills` runs **before** `tooling`, which writes the `AGENTS.md` skills
+table and the oxfmt/oxlint/knip ignores from `rc.agentSkills` (what landed, not the plan).
+The knip `ignore` is only written for skill dirs that actually contain scripts, or knip
+reports the entry as a stale hint in every run. Adapters can also append lines to
+`AGENTS.md` via `tooling.agentsMd` — Next uses it to point at `node_modules/next/dist/docs/`
+while `next.config.ts` sets `agentRules: false`, otherwise `next dev` (≥16.3) upserts its
+own `AGENTS.md`/`CLAUDE.md` into `apps/web` and dirties the tree.
+
+Interactive prompts (`prompts.ts`) support **Esc = back one question**: clack maps Esc and
+Ctrl+C to the same cancel symbol, so the module records the last stdin `keypress` name to
+tell them apart. `ask()` takes a thunk so the reset happens before the prompt exists.
+
 ### Output contract
 
 `Reporter` has two implementations (`reporter/clack.ts` pretty, `reporter/json.ts` agent mode).

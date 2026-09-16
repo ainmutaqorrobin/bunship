@@ -47,6 +47,33 @@ export const expo: StackAdapter = {
     build: 'expo export --platform web',
     typecheck: 'tsc --noEmit',
   },
+  skills: [
+    {
+      source: 'expo/skills',
+      name: 'expo-project-structure',
+      by: 'Expo',
+      about: 'Folder layout for an Expo app: `src/`, routes-only `app/`, where shared code lives.',
+    },
+    {
+      source: 'expo/skills',
+      name: 'expo-router',
+      by: 'Expo',
+      about: 'Expo Router navigation: file-based routes, links, native stacks, modals, sheets.',
+    },
+    {
+      source: 'expo/skills',
+      name: 'expo-native-ui',
+      by: 'Expo',
+      about:
+        'Native-feeling screens: semantic colours, controls, icons, media, platform conventions.',
+    },
+    {
+      source: 'expo/skills',
+      name: 'expo-data-fetching',
+      by: 'Expo',
+      about: 'API calls, React Query/SWR, caching, offline support and route data loaders.',
+    },
+  ],
   tooling: {
     oxlintPlugins: ['react', 'jsx-a11y'],
     oxlintRules: {

@@ -7,6 +7,14 @@ export type StackId = WebStack | MobileStack | ApiStack;
 export const AGENT_IDS = ['claude', 'cursor', 'copilot', 'codex', 'gemini', 'windsurf'] as const;
 export type AgentId = (typeof AGENT_IDS)[number];
 
+/**
+ * Skill packs installable for the selected agents (see src/skills.ts). `stack` is the
+ * per-framework best-practice set derived from the chosen adapters; the rest are
+ * stack-independent extras.
+ */
+export const SKILL_PACK_IDS = ['stack', 'web-design', 'frontend-design'] as const;
+export type SkillPackId = (typeof SKILL_PACK_IDS)[number];
+
 interface StackSelection {
   web: WebStack | null;
   mobile: MobileStack | null;
@@ -24,6 +32,8 @@ export interface ProjectConfig {
   cicd: boolean;
   /** Agents to write an after-edit oxlint/oxfmt hook for; empty = none. */
   agents: AgentId[];
+  /** Skill packs to install for those agents; empty = none. Requires `agents`. */
+  skills: SkillPackId[];
   /** false ⇒ no git init/commit and no husky wiring at all. */
   git: boolean;
   install: boolean;
@@ -42,6 +52,7 @@ export const YES_DEFAULTS = {
   docker: true,
   cicd: true,
   agents: ['claude'] as AgentId[],
+  skills: ['stack'] as SkillPackId[],
 } as const;
 
 export const PROJECT_NAME_RE = /^[a-z](?:[a-z0-9-]*[a-z0-9])?$/;

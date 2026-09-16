@@ -52,6 +52,15 @@ export const next: StackAdapter = {
     // .next/types. Plain `tsc --noEmit` on a fresh clone would fail with TS2304.
     typecheck: 'next typegen && tsc --noEmit',
   },
+  skills: [
+    {
+      source: 'vercel-labs/agent-skills',
+      name: 'vercel-react-best-practices',
+      by: 'Vercel',
+      about:
+        'React/Next.js performance rules (waterfalls, bundle size, re-renders, server components). Load before writing or reviewing React code.',
+    },
+  ],
   tooling: {
     oxlintPlugins: ['react', 'jsx-a11y', 'nextjs'],
     oxlintRules: {
@@ -61,6 +70,14 @@ export const next: StackAdapter = {
       'import/no-unassigned-import': 'off',
     },
     gitignore: ['.next/', 'next-env.d.ts'],
+    // The one line Next's own managed AGENTS.md block exists to deliver (agentRules is off
+    // in next.config.ts so it does not fight the root guide): version-matched docs ship in
+    // the package, and agents measurably do better reading them than guessing from memory.
+    agentsMd: [
+      '- Next.js docs matching the installed version are bundled at `node_modules/next/dist/docs/`.',
+      '  Read the relevant guide there before writing Next code — APIs and conventions may differ',
+      '  from your training data. `apps/web` has `agentRules: false`; this file is the agent guide.',
+    ],
   },
   docker: {
     dev: { args: ['-H', '0.0.0.0'] },
