@@ -17,4 +17,9 @@ export function validateConfig(cfg: ProjectConfig): void {
   if (cfg.cicd && !cfg.docker) {
     throw new UsageError('--cicd requires Docker; drop --no-docker or drop --cicd.');
   }
+  if (cfg.skills.length > 0 && cfg.agents.length === 0) {
+    throw new UsageError(
+      '--skills needs at least one agent to install for; add --agents <ids> or drop --skills.',
+    );
+  }
 }

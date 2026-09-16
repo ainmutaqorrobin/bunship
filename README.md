@@ -11,6 +11,7 @@ top:
 - optional **Docker** — prod-parity `compose.yaml` plus a hot-reload dev stack (`bun run docker:dev`)
 - optional **GitHub Actions CI/CD** — VPS deploy (image → registry → SSH → compose → Nginx/TLS)
 - optional **AI-agent hooks** — every file Claude Code / Cursor / Copilot / Codex / Gemini / Windsurf edits is oxlint-fixed + oxfmt'd on the spot
+- optional **agent skills** — official/author-maintained `SKILL.md` playbooks for each selected framework (Vercel, Expo, Hono, Fastify, …) installed where those agents read them, wired into `AGENTS.md`
 
 Because apps come from official scaffolders, generated code always matches upstream — and AI
 coding agents can bootstrap projects without burning tokens on boilerplate (`--json` agent mode).
@@ -38,6 +39,7 @@ my-startup/
 ├── .oxlintrc.json · .oxfmtrc.json · knip.json
 ├── .husky/ · .vscode/ · AGENTS.md · CLAUDE.md · .env.example
 ├── scripts/agent-format.ts + .claude/settings.json …  (--agents)
+├── .agents/skills/ · .claude/skills/ · skills-lock.json  (--skills)
 ├── compose.yaml · compose.dev.yaml · Dockerfiles      (--docker)
 ├── .github/workflows/{ci,deploy}.yml                  (--cicd)
 └── deploy/                  VPS bundle: compose, nginx + TLS, bootstrap guide

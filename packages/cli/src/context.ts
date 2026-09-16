@@ -19,6 +19,7 @@ export interface RunContext {
   docker: Manifest['docker'];
   cicd: Manifest['cicd'];
   agentHooks: Manifest['agentHooks'];
+  agentSkills: Manifest['agentSkills'];
   git: { initialized: boolean; committed: boolean };
 }
 
@@ -39,6 +40,7 @@ export function createRunContext(
     docker: null,
     cicd: null,
     agentHooks: null,
+    agentSkills: null,
     git: { initialized: false, committed: false },
   };
 }

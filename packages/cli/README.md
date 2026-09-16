@@ -51,6 +51,10 @@ my-startup/
 ├── scripts/agent-format.ts  oxlint --fix + oxfmt on every file an agent edits
 ├── .claude/settings.json    …and one tiny hook config per chosen agent
 │
+│   with --skills (default: stack):
+├── .agents/skills/          SKILL.md best-practice playbooks per framework (+ .claude/skills, .windsurf/skills)
+├── skills-lock.json         pinned sources + hashes: bunx skills update
+│
 │   with --docker:
 ├── apps/*/Dockerfile        per-app production images
 ├── compose.yaml             local prod-parity: bun run docker:prod
@@ -105,18 +109,19 @@ stays the path.
 
 ## Flags
 
-| Flag                                                                  | Meaning                                                     |
-| --------------------------------------------------------------------- | ----------------------------------------------------------- |
-| `--web <next\|react-vite\|nuxt\|none>`                                | Web frontend                                                |
-| `--mobile <expo\|none>`                                               | Mobile app                                                  |
-| `--api <nest\|express\|hono\|fastify\|none>`                          | API backend                                                 |
-| `--docker` / `--no-docker`                                            | Dockerfiles + compose.yaml                                  |
-| `--cicd` / `--no-cicd`                                                | GitHub Actions CI + VPS deploy pipeline (implies docker)    |
-| `--agents <claude,cursor,copilot,codex,gemini,windsurf\|none>`        | Format-on-edit hooks for AI coding agents (see below)       |
-| `--json`                                                              | Agent mode: no prompts, stdout is exactly one JSON manifest |
-| `-y, --yes`                                                           | Defaults: next + nest + docker + cicd + claude hooks        |
-| `--dry-run`                                                           | Print the manifest without writing anything                 |
-| `--no-git`, `--no-install`, `--force`, `--verbose`, `--keep-on-error` | What they say                                               |
+| Flag                                                                  | Meaning                                                             |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `--web <next\|react-vite\|nuxt\|none>`                                | Web frontend                                                        |
+| `--mobile <expo\|none>`                                               | Mobile app                                                          |
+| `--api <nest\|express\|hono\|fastify\|none>`                          | API backend                                                         |
+| `--docker` / `--no-docker`                                            | Dockerfiles + compose.yaml                                          |
+| `--cicd` / `--no-cicd`                                                | GitHub Actions CI + VPS deploy pipeline (implies docker)            |
+| `--agents <claude,cursor,copilot,codex,gemini,windsurf\|none>`        | Format-on-edit hooks for AI coding agents (see below)               |
+| `--skills <stack,web-design,frontend-design\|none>`                   | Best-practice skills for those agents (see below)                   |
+| `--json`                                                              | Agent mode: no prompts, stdout is exactly one JSON manifest         |
+| `-y, --yes`                                                           | Defaults: next + nest + docker + cicd + claude hooks + stack skills |
+| `--dry-run`                                                           | Print the manifest without writing anything                         |
+| `--no-git`, `--no-install`, `--force`, `--verbose`, `--keep-on-error` | What they say                                                       |
 
 ## Agent mode
 
@@ -150,7 +155,41 @@ independent and all commit cleanly. The script also works by hand:
 `bun scripts/agent-format.ts path/to/file.ts`.
 
 Interactive runs preselect Claude Code; `--yes` picks it; `--json` writes none unless you
-ask (agents shouldn't get hooks they didn't request).
+ask (agents shouldn't get hooks they didn't request). In interactive mode **Esc goes back
+one question** (your earlier answer is preselected) and Ctrl+C quits.
+
+## Best-practice skills for AI agents
+
+A hook keeps agent output _formatted_; a skill keeps it _idiomatic_. `--skills` installs
+[Agent Skills](https://agentskills.io) — `SKILL.md` playbooks an agent loads on demand —
+for the agents you chose, using the same rule as the apps: nothing is vendored here, the
+[`skills` CLI](https://skills.sh) fetches each one from its maintainer's repo at scaffold
+time, so you get what they ship today.
+
+Why bother: agents otherwise write React, Nest or Fastify from whatever their training data
+remembers. A skill puts the framework's current conventions and pitfalls one file away —
+Next.js measures a clear gain when agents read bundled docs instead of guessing, and the
+per-framework skills below are the same idea for the rest of the stack. The generated
+`AGENTS.md` tells the agent which skill to load before touching which app.
+
+| Pack              | Installs                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stack` (default) | One set per selected framework: Next.js / React + Vite → Vercel's `vercel-react-best-practices` (+ `vercel-composition-patterns` for Vite) · Nuxt → `nuxt` + `vue` (antfu) · Expo → `expo-router`, `expo-project-structure`, `expo-native-ui`, `expo-data-fetching` (Expo) · Hono → `hono` (Hono) · Fastify → `fastify-best-practices` (Matteo Collina) · Express → `node` (Matteo Collina) · NestJS → `nestjs-best-practices` (community; no first-party one exists yet) |
+| `web-design`      | Vercel's `web-design-guidelines`: 100+ accessibility/UX audit rules — "review my UI" gets a real checklist                                                                                                                                                                                                                                                                                                                                                                |
+| `frontend-design` | Anthropic's `frontend-design`: opinionated visual direction for new UI instead of template defaults                                                                                                                                                                                                                                                                                                                                                                       |
+
+Where they land follows each agent's discovery rules: Cursor, Codex, Copilot and Gemini
+read the shared `.agents/skills/`; Claude Code reads `.claude/skills/` and Windsurf
+`.windsurf/skills/`, so those get a copy (real copies, not symlinks — symlinks need
+Developer Mode on Windows and the skills CLI silently writes nothing without it).
+`skills-lock.json` pins sources and hashes; `bunx skills update` refreshes. Skill
+directories are excluded from oxlint/oxfmt/knip so third-party content never breaks
+`bun run check`.
+
+A skill that cannot be fetched — repo renamed, offline — does not fail the run: it is
+reported in the manifest (`agentSkills.failed`) and in a warning, and `AGENTS.md` lists
+only what was installed. `--skills` needs at least one agent; `--yes` picks `stack`,
+`--json` installs none unless asked.
 
 ## Requirements
 

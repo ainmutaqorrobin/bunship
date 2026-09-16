@@ -10,6 +10,7 @@ const cfg: ProjectConfig = {
   docker: true,
   cicd: false,
   agents: ['claude'],
+  skills: ['stack'],
   git: true,
   install: false,
   output: 'json',
@@ -39,6 +40,19 @@ describe('buildManifest', () => {
           script: 'scripts/agent-format.ts',
           files: ['.claude/settings.json'],
         },
+        agentSkills: {
+          packs: ['stack'],
+          installed: [{ name: 'vercel-react-best-practices', source: 'vercel-labs/agent-skills' }],
+          failed: [
+            {
+              name: 'nestjs-best-practices',
+              source: 'kadajett/agent-nestjs-skills',
+              reason: 'offline',
+            },
+          ],
+          dirs: ['.claude/skills'],
+          lock: 'skills-lock.json',
+        },
         git: { initialized: true, committed: true },
       },
       true,
@@ -47,6 +61,8 @@ describe('buildManifest', () => {
     expect(m.tooling.bunLinker).toBe('hoisted');
     expect(m.docker?.services).toEqual(['web', 'api']);
     expect(m.agentHooks?.files).toEqual(['.claude/settings.json']);
+    // A failed skill is data for the agent, not a failed run.
+    expect(m.agentSkills?.failed[0]?.name).toBe('nestjs-best-practices');
     // install:false ⇒ the manifest must tell the agent to install
     expect(m.nextSteps.some((s) => s.startsWith('bun install'))).toBe(true);
     expect(m.error).toBeUndefined();
@@ -63,6 +79,7 @@ describe('buildManifest', () => {
         docker: null,
         cicd: null,
         agentHooks: null,
+        agentSkills: null,
         git: { initialized: false, committed: false },
       },
       false,

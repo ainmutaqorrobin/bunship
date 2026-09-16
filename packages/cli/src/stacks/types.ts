@@ -1,5 +1,6 @@
 import type { ProjectConfig, StackId } from '../config/schema';
 import type { Reporter } from '../reporter/types';
+import type { SkillRef } from '../skills';
 
 /** Declarative contributions an adapter makes to root-level files (aggregated by steps). */
 interface ToolingFragment {
@@ -15,6 +16,8 @@ interface ToolingFragment {
   gitignore?: string[];
   /** Extra file extensions oxfmt should cover in lint-staged (e.g. "vue"). */
   formatExtensions?: string[];
+  /** Framework-specific lines appended to the root AGENTS.md "Conventions" list. */
+  agentsMd?: string[];
 }
 
 interface DockerSpec {
@@ -77,6 +80,12 @@ export interface StackAdapter {
   /** Scripts ensured (added only if missing) in the app's package.json. */
   scripts: Partial<Record<'dev' | 'build' | 'start' | 'typecheck', string>>;
   tooling: ToolingFragment;
+  /**
+   * Best-practice skills for this framework, installed by the agent-skills step when the
+   * `stack` pack is selected. Prefer the framework's own (or its author's) repo; a
+   * community skill is acceptable only when nothing first-party exists — say so in `by`.
+   */
+  skills: SkillRef[];
   /** Undefined = no container for this app (e.g. Expo). */
   docker?: DockerSpec;
 }

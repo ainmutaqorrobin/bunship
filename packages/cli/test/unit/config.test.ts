@@ -90,3 +90,55 @@ describe('resolveConfig --agents', () => {
     ).rejects.toThrow(/Unknown agent for --agents: kiro.*claude/);
   });
 });
+
+describe('resolveConfig --skills', () => {
+  test('json mode without --skills installs none', async () => {
+    const cfg = await resolveConfig('demo-app', {
+      ...base,
+      json: true,
+      api: 'hono',
+      agents: 'claude',
+    });
+    expect(cfg.skills).toEqual([]);
+  });
+
+  test('--yes defaults to the stack pack', async () => {
+    const cfg = await resolveConfig('demo-app', { ...base, yes: true });
+    expect(cfg.skills).toEqual(['stack']);
+  });
+
+  test('--yes --agents none drops the skills default instead of erroring', async () => {
+    const cfg = await resolveConfig('demo-app', { ...base, yes: true, agents: 'none' });
+    expect(cfg.agents).toEqual([]);
+    expect(cfg.skills).toEqual([]);
+  });
+
+  test('extra packs combine with stack and de-duplicate', async () => {
+    const cfg = await resolveConfig('demo-app', {
+      ...base,
+      json: true,
+      web: 'next',
+      agents: 'claude',
+      skills: 'stack, Web-Design,stack',
+    });
+    expect(cfg.skills).toEqual(['stack', 'web-design']);
+  });
+
+  test('--skills without an agent is a usage error', async () => {
+    await expect(
+      resolveConfig('demo-app', { ...base, json: true, api: 'hono', skills: 'stack' }),
+    ).rejects.toThrow(/--skills needs at least one agent/);
+  });
+
+  test('unknown pack is a usage error naming the valid ids', async () => {
+    await expect(
+      resolveConfig('demo-app', {
+        ...base,
+        json: true,
+        api: 'hono',
+        agents: 'claude',
+        skills: 'bun',
+      }),
+    ).rejects.toThrow(/Unknown skill pack for --skills: bun.*stack/);
+  });
+});

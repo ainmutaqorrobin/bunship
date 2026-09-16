@@ -30,7 +30,7 @@ function getAdapter(id: StackId): StackAdapter {
 }
 
 /** Selected adapters in generation order: web → mobile → api. */
-export function selectedAdapters(cfg: ProjectConfig): StackAdapter[] {
+export function selectedAdapters(cfg: Pick<ProjectConfig, 'stacks'>): StackAdapter[] {
   const ids = [cfg.stacks.web, cfg.stacks.mobile, cfg.stacks.api].filter(
     (id): id is StackId => id !== null,
   );

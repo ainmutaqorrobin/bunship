@@ -1,4 +1,4 @@
-import type { AgentId, ProjectConfig, StackId } from './config/schema';
+import type { AgentId, ProjectConfig, SkillPackId, StackId } from './config/schema';
 
 export interface ManifestApp {
   stack: StackId;
@@ -28,6 +28,19 @@ export interface Manifest {
   cicd: { workflows: string[]; requiredSecrets: string[]; environments: string[] } | null;
   /** After-edit oxlint/oxfmt hooks written for coding agents; null = none requested. */
   agentHooks: { agents: AgentId[]; script: string; files: string[] } | null;
+  /**
+   * SKILL.md packs for those agents; null = none requested. A skill that could not be
+   * fetched (repo gone, renamed upstream, offline) lands in `failed` instead of failing
+   * the run — the rest of the repo is still complete and usable.
+   */
+  agentSkills: {
+    packs: SkillPackId[];
+    installed: Array<{ name: string; source: string }>;
+    failed: Array<{ name: string; source: string; reason: string }>;
+    /** Root-relative directories the copies were written to (one per agent family). */
+    dirs: string[];
+    lock: string;
+  } | null;
   git: { initialized: boolean; committed: boolean };
   nextSteps: string[];
   error?: { step: string; message: string; hint?: string; tail?: string[] };
@@ -40,6 +53,7 @@ export interface ManifestParts {
   docker: Manifest['docker'];
   cicd: Manifest['cicd'];
   agentHooks: Manifest['agentHooks'];
+  agentSkills: Manifest['agentSkills'];
   git: Manifest['git'];
 }
 
@@ -81,6 +95,7 @@ export function buildManifest(
     docker: parts.docker,
     cicd: parts.cicd,
     agentHooks: parts.agentHooks,
+    agentSkills: parts.agentSkills,
     git: parts.git,
     nextSteps,
     ...(error ? { error } : {}),
