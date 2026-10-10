@@ -1,11 +1,22 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { exec } from '../exec';
-import { copyTemplate } from '../template';
-import { resolvePin } from './shared';
+import { pathExists } from '../fsx';
+import { patchFileOrWarn, resolvePin } from './shared';
 import type { StackAdapter } from './types';
 
 const PIN = 'create-next-app@16';
+
+const CONFIG_KEYS = `  // Standalone server output for the Docker image, traced from the monorepo root so
+  // workspace dependencies land in the bundle.
+  output: 'standalone',
+  outputFileTracingRoot: monorepoRoot,
+  // Next >=16.3 otherwise upserts its own AGENTS.md/CLAUDE.md into this app the first time
+  // \`next dev\` runs under a coding agent. The root AGENTS.md is the single agent guide for
+  // this monorepo and already points at the bundled docs, so keep the tree clean.
+  agentRules: false,
+`;
 
 export const next: StackAdapter = {
   id: 'next',
@@ -40,8 +51,36 @@ export const next: StackAdapter = {
     );
   },
   async postProcess(ctx) {
-    // Standalone output + monorepo-rooted file tracing (required for the Docker image).
-    await copyTemplate('stacks/next/next.config.ts.tpl', join(ctx.appDir, 'next.config.ts'));
+    // Patch upstream's next.config.ts rather than replacing it: since 16.4 it carries the
+    // Tailwind wiring (a Turbopack `*.css` loader for @tailwindcss/turbopack — there is no
+    // postcss.config.mjs any more) plus defaults like cacheComponents. Overwriting it
+    // shipped apps with unprocessed Tailwind and an unused dep that failed knip.
+    await patchFileOrWarn(
+      ctx,
+      'next.config.ts',
+      /^(import type \{ NextConfig \} from ["']next["'];?\r?\n)/m,
+      `import path from 'node:path';\n$1\nconst monorepoRoot = path.join(__dirname, '../..');\n`,
+      'resolve the monorepo root',
+    );
+    await patchFileOrWarn(
+      ctx,
+      'next.config.ts',
+      /(const nextConfig: NextConfig = \{\r?\n)/,
+      `$1${CONFIG_KEYS}`,
+      'standalone output + monorepo file tracing (Docker image) and agentRules off',
+    );
+    // Turbopack must be rooted at the monorepo so workspace deps resolve. Merge into
+    // upstream's block when it has one (16.4+); older 16.x configs have none.
+    const configPath = join(ctx.appDir, 'next.config.ts');
+    const hasTurbopack =
+      (await pathExists(configPath)) && /\bturbopack: \{/.test(await readFile(configPath, 'utf8'));
+    await patchFileOrWarn(
+      ctx,
+      'next.config.ts',
+      hasTurbopack ? /(\bturbopack: \{\r?\n)/ : /(\n {2}agentRules: false,\n)/,
+      hasTurbopack ? '$1    root: monorepoRoot,\n' : '$1  turbopack: { root: monorepoRoot },\n',
+      'root Turbopack at the monorepo',
+    );
   },
   scripts: {
     dev: 'next dev --turbopack',
