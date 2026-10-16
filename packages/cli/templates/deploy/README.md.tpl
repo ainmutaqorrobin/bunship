@@ -1,7 +1,7 @@
 # Deploying {{projectName}} to a VPS
 
 The pattern: **CI builds, GHCR stores, the VPS pulls.** The VPS never checks out source
-and never builds — it holds a compose file plus env files and runs `docker compose pull && up -d`.
+and never builds. It holds a compose file plus env files and runs `docker compose pull && up -d`.
 
 - Push to `main` → GitHub Actions builds the images, pushes them to GHCR
   (tags: `staging` + immutable `sha-*`), then SSHes into the VPS and redeploys.
@@ -9,7 +9,7 @@ and never builds — it holds a compose file plus env files and runs `docker com
 
 ## One-time GitHub setup
 
-Repo **Settings → Secrets and variables → Actions** — create these secrets:
+In the repo, open **Settings → Secrets and variables → Actions** and create these secrets:
 
 | Secret | Value |
 | --- | --- |
@@ -48,19 +48,19 @@ sudo apt install nginx certbot python3-certbot-nginx
 sudo cp nginx configs to /etc/nginx/sites-available/ and enable them
 sudo certbot --nginx
 
-# 6. Firewall — the app ports stay closed; nginx is the only ingress
+# 6. Firewall: the app ports stay closed, nginx is the only ingress
 sudo ufw allow 22 && sudo ufw allow 80 && sudo ufw allow 443 && sudo ufw enable
 ```
 
-Note: the compose file binds services to `127.0.0.1` on purpose — Docker's iptables rules
+Note: the compose file binds services to `127.0.0.1` on purpose. Docker's iptables rules
 bypass UFW, so a plain `3000:3000` would expose the app to the whole internet.
 
 ## Two env files, deliberately split
 
-- `/srv/{{projectName}}/.env` — read by Compose itself for `${VAR}` substitution
-  (image tags). Never put app secrets here: a `$` in a secret gets eaten by substitution.
-- `/srv/{{projectName}}/env/<service>.env` — handed to the container via `env_file:`;
-  put app config/secrets here.
+- `/srv/{{projectName}}/.env` is read by Compose itself for `${VAR}` substitution
+  (image tags). Never put app secrets here, because a `$` in a secret gets eaten by substitution.
+- `/srv/{{projectName}}/env/<service>.env` is handed to the container via `env_file:`.
+  Put app config/secrets here.
 
 ## Verify a deploy (a green workflow is not proof)
 

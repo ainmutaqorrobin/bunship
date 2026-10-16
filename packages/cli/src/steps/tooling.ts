@@ -274,8 +274,8 @@ export const tooling: Step = {
             '| `compose.yaml` | production images, the same ones CI deploys |',
             '| `compose.dev.yaml` | dev servers for every app, hot reload |',
             '',
-            '`docker:dev` runs `docker compose ... up --watch`. The `--watch` is load-bearing:',
-            'Compose syncs your edits into the containers, and rebuilds an image when a',
+            "`docker:dev` runs `docker compose ... up --watch`. Don't drop `--watch`.",
+            'Compose syncs your edits into the containers and rebuilds an image when a',
             '`package.json` or `bun.lock` changes. Plain `up` boots the same stack with the',
             'source frozen at build time.',
           ]
@@ -297,12 +297,12 @@ export const tooling: Step = {
       '',
       '## Toolchain',
       '',
-      '- **Bun workspaces** — package management + task running (`bun --filter`)',
-      '- **oxlint / oxfmt** — linting and formatting (VS Code: `oxc.oxc-vscode`)',
-      '  - `oxfmt` is pinned exactly while in beta; bump with `bun update oxfmt && bun run format`',
-      '- **knip** — unused files, exports and dependencies',
+      '- **Bun workspaces**: package management + task running (`bun --filter`)',
+      '- **oxlint / oxfmt**: linting and formatting (VS Code: `oxc.oxc-vscode`)',
+      '  - `oxfmt` is pinned exactly while in beta. Bump with `bun update oxfmt && bun run format`',
+      '- **knip**: unused files, exports and dependencies',
       ...(cfg.git
-        ? ['- **husky + lint-staged** — pre-commit format/lint, pre-push `bun run check`']
+        ? ['- **husky + lint-staged**: pre-commit format/lint, pre-push `bun run check`']
         : []),
     ].join('\n');
     await writeFileLf(join(root, 'README.md'), readme);

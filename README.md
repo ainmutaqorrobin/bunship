@@ -4,16 +4,16 @@ A CLI that scaffolds production-ready **Bun monorepos** by orchestrating each fr
 **official scaffolder** non-interactively, then layering an opinionated root toolchain on
 top:
 
-- **Bun** — package manager + workspaces (`bun --filter '*' dev`)
-- **oxc** — `oxlint` (linting) + `oxfmt` (formatting)
-- **knip** — unused files, exports, and dependencies
-- **husky + lint-staged** — pre-commit format/lint, pre-push full check
-- optional **Docker** — prod-parity `compose.yaml` plus a hot-reload dev stack (`bun run docker:dev`)
-- optional **GitHub Actions CI/CD** — VPS deploy (image → registry → SSH → compose → Nginx/TLS)
-- optional **AI-agent hooks** — every file Claude Code / Cursor / Copilot / Codex / Gemini / Windsurf edits is oxlint-fixed + oxfmt'd on the spot
-- optional **agent skills** — official/author-maintained `SKILL.md` playbooks for each selected framework (Vercel, Expo, Hono, Fastify, …) installed where those agents read them, wired into `AGENTS.md`
+- **Bun**: package manager + workspaces (`bun --filter '*' dev`)
+- **oxc**: `oxlint` (linting) + `oxfmt` (formatting)
+- **knip**: unused files, exports, and dependencies
+- **husky + lint-staged**: pre-commit format/lint, pre-push full check
+- optional **Docker**: prod-parity `compose.yaml` plus a hot-reload dev stack (`bun run docker:dev`)
+- optional **GitHub Actions CI/CD**: VPS deploy (image → registry → SSH → compose → Nginx/TLS)
+- optional **AI-agent hooks**: every file Claude Code / Cursor / Copilot / Codex / Gemini / Windsurf edits is oxlint-fixed + oxfmt'd on the spot
+- optional **agent skills**: official/author-maintained `SKILL.md` playbooks for each selected framework (Vercel, Expo, Hono, Fastify, …) installed where those agents read them, wired into `AGENTS.md`
 
-Because apps come from official scaffolders, generated code always matches upstream — and AI
+Because apps come from official scaffolders, generated code always matches upstream, and AI
 coding agents can bootstrap projects without burning tokens on boilerplate (`--json` agent mode).
 
 Scaffold it, ship it: `bun create bunship`, then push.
@@ -49,8 +49,8 @@ Finishes with `git init` → `bun install` → oxfmt pass → first commit. Full
 and details: [packages/cli/README.md](packages/cli/README.md).
 
 With `--docker` you get two stacks: `bun run docker:prod` (the images CI deploys) and
-`bun run docker:dev` — every app's dev server in a container, hot reload via Compose
-Watch rather than bind mounts, so edits land on Windows and macOS hosts too.
+`bun run docker:dev`, which runs every app's dev server in a container. Hot reload goes
+through Compose Watch rather than bind mounts, so edits land on Windows and macOS hosts too.
 
 ## Repo layout
 

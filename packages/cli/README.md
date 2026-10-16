@@ -1,6 +1,6 @@
 # create-bunship
 
-Scaffold a production-ready **Bun monorepo** in one command — and ship it. Instead of
+Scaffold a production-ready **Bun monorepo** in one command and ship it. Instead of
 maintaining its own boilerplate, bunship orchestrates each framework's **official
 scaffolder** non-interactively, then wires a single coherent toolchain on top.
 
@@ -78,13 +78,13 @@ The generated root `package.json` gives you:
 | `bun run docker:dev`          | every app in Docker with hot reload (`--docker`) |
 | `bun run docker:prod`         | local prod-parity run of the images CI deploys   |
 
-The CLI finishes by running `git init`, `bun install`, an oxfmt pass, and a first commit
-— so every generated repo passes `bun run check` and `bun run build` from its very first
-commit (enforced by this project's nightly CI matrix against latest upstream scaffolders).
+The CLI finishes by running `git init`, `bun install`, an oxfmt pass, and a first commit.
+Every generated repo passes `bun run check` and `bun run build` from its very first commit,
+and this project's nightly CI matrix checks that against the latest upstream scaffolders.
 
 ## The Docker dev stack
 
-`--docker` writes two compose files. `compose.yaml` builds the per-app production images —
+`--docker` writes two compose files. `compose.yaml` builds the per-app production images,
 the same ones the deploy workflow ships. `compose.dev.yaml` runs each app's **dev server**
 instead, all from one shared `dev.Dockerfile`, so you can bring the whole stack up in
 containers while you work:
@@ -94,18 +94,18 @@ bun run docker:dev     # docker compose -f compose.dev.yaml up --watch
 bun run docker:prod    # docker compose up --build
 ```
 
-The `--watch` is load-bearing. There are **no bind mounts** — Compose Watch syncs your
-edits into the running containers, and rebuilds when a `package.json` or `bun.lock`
+Don't drop `--watch`. There are **no bind mounts**. Compose Watch syncs your edits into
+the running containers and rebuilds when a `package.json` or `bun.lock`
 changes (a new dependency can't be synced into an image whose `node_modules` is already
 baked in). Bind mounts don't reliably deliver file-change events from Windows or macOS
-hosts, which is exactly where hot reload silently stops working. Plain `up` (no `--watch`)
+hosts, which is where hot reload stops working without any error. Plain `up` (no `--watch`)
 boots the same stack with the source frozen at image-build time.
 
 Each framework's dev server is started so it binds `0.0.0.0` and is reachable through the
-published port (`-H 0.0.0.0` for Next, `--host 0.0.0.0` for Vite and Nuxt,
-`FASTIFY_ADDRESS` for Fastify; Nest, Express, and Hono already do). Expo is not in either
-stack — Metro needs LAN reachability and QR pairing, so `bun run dev:mobile` on the host
-stays the path.
+published port: `-H 0.0.0.0` for Next, `--host 0.0.0.0` for Vite and Nuxt, and
+`FASTIFY_ADDRESS` for Fastify. Nest, Express, and Hono already bind that way. Expo is not
+in either stack. Metro needs LAN reachability and QR pairing, so run `bun run dev:mobile`
+on the host instead.
 
 ## Flags
 
@@ -125,18 +125,18 @@ stays the path.
 
 ## Agent mode
 
-`--json` makes the CLI a good citizen for AI coding agents: all progress goes to stderr,
+`--json` makes the CLI safe to drive from AI coding agents. All progress goes to stderr,
 stdout carries a single JSON manifest (apps, ports, scripts, required deploy secrets, next
-steps), exit codes are meaningful (0 ok / 1 pipeline / 2 usage), and the generated repo
+steps), exit codes are meaningful (0 ok, 1 pipeline, 2 usage), and the generated repo
 contains an `AGENTS.md` so agents don't re-derive conventions. Boilerplate comes from
-official scaffolders, not from model output — that's the whole point.
+official scaffolders, not from model output.
 
 ## Format-on-edit hooks for AI agents
 
-An agent that edits a file rarely formats it. `--agents` fixes that at the source: every
+An agent that edits a file rarely formats it. `--agents` fixes that at the source. Every
 file the agent touches is run through `oxlint --fix` + `oxfmt` the moment the edit lands,
-using the exact rules lint-staged applies at commit — so by the time you look at the
-diff, it is already clean.
+using the exact rules lint-staged applies at commit, so the diff is already clean by the
+time you look at it.
 
 One shared script does the work (`scripts/agent-format.ts`, run by bun, no extra
 dependencies), and each agent gets a two-line config pointing at it:
@@ -150,46 +150,46 @@ dependencies), and each agent gets a two-line config pointing at it:
 | Gemini CLI                   | `.gemini/settings.json`     | `AfterTool` for write / replace |
 | Windsurf                     | `.windsurf/hooks.json`      | `post_write_code`               |
 
-Pick several (`--agents claude,cursor`) if your team is mixed — the configs are
+Pick several (`--agents claude,cursor`) if your team is mixed. The configs are
 independent and all commit cleanly. The script also works by hand:
 `bun scripts/agent-format.ts path/to/file.ts`.
 
-Interactive runs preselect Claude Code; `--yes` picks it; `--json` writes none unless you
-ask (agents shouldn't get hooks they didn't request). In interactive mode **Esc goes back
+Interactive runs preselect Claude Code, `--yes` picks it, and `--json` writes none unless
+you ask (agents shouldn't get hooks they didn't request). In interactive mode **Esc goes back
 one question** (your earlier answer is preselected) and Ctrl+C quits.
 
 ## Best-practice skills for AI agents
 
-A hook keeps agent output _formatted_; a skill keeps it _idiomatic_. `--skills` installs
-[Agent Skills](https://agentskills.io) — `SKILL.md` playbooks an agent loads on demand —
-for the agents you chose, using the same rule as the apps: nothing is vendored here, the
-[`skills` CLI](https://skills.sh) fetches each one from its maintainer's repo at scaffold
+A hook keeps agent output _formatted_, and a skill keeps it _idiomatic_. `--skills`
+installs [Agent Skills](https://agentskills.io) (`SKILL.md` playbooks an agent loads on
+demand) for the agents you chose, using the same rule as the apps. Nothing is vendored
+here. The [`skills` CLI](https://skills.sh) fetches each one from its maintainer's repo at scaffold
 time, so you get what they ship today.
 
 Why bother: agents otherwise write React, Nest or Fastify from whatever their training data
-remembers. A skill puts the framework's current conventions and pitfalls one file away —
+remembers. A skill puts the framework's current conventions and pitfalls one file away.
 Next.js measures a clear gain when agents read bundled docs instead of guessing, and the
-per-framework skills below are the same idea for the rest of the stack. The generated
+per-framework skills below apply the same idea to the rest of the stack. The generated
 `AGENTS.md` tells the agent which skill to load before touching which app.
 
-| Pack              | Installs                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `stack` (default) | One set per selected framework: Next.js / React + Vite → Vercel's `vercel-react-best-practices` (+ `vercel-composition-patterns` for Vite) · Nuxt → `nuxt` + `vue` (antfu) · Expo → `expo-router`, `expo-project-structure`, `expo-native-ui`, `expo-data-fetching` (Expo) · Hono → `hono` (Hono) · Fastify → `fastify-best-practices` (Matteo Collina) · Express → `node` (Matteo Collina) · NestJS → `nestjs-best-practices` (community; no first-party one exists yet) |
-| `web-design`      | Vercel's `web-design-guidelines`: 100+ accessibility/UX audit rules — "review my UI" gets a real checklist                                                                                                                                                                                                                                                                                                                                                                |
-| `frontend-design` | Anthropic's `frontend-design`: opinionated visual direction for new UI instead of template defaults                                                                                                                                                                                                                                                                                                                                                                       |
+| Pack              | Installs                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stack` (default) | One set per selected framework: Next.js / React + Vite → Vercel's `vercel-react-best-practices` (+ `vercel-composition-patterns` for Vite) · Nuxt → `nuxt` + `vue` (antfu) · Expo → `expo-router`, `expo-project-structure`, `expo-native-ui`, `expo-data-fetching` (Expo) · Hono → `hono` (Hono) · Fastify → `fastify-best-practices` (Matteo Collina) · Express → `node` (Matteo Collina) · NestJS → `nestjs-best-practices` (community, since no first-party one exists yet) |
+| `web-design`      | Vercel's `web-design-guidelines`: 100+ accessibility/UX audit rules, so "review my UI" gets a real checklist                                                                                                                                                                                                                                                                                                                                                                    |
+| `frontend-design` | Anthropic's `frontend-design`: opinionated visual direction for new UI instead of template defaults                                                                                                                                                                                                                                                                                                                                                                             |
 
-Where they land follows each agent's discovery rules: Cursor, Codex, Copilot and Gemini
-read the shared `.agents/skills/`; Claude Code reads `.claude/skills/` and Windsurf
-`.windsurf/skills/`, so those get a copy (real copies, not symlinks — symlinks need
-Developer Mode on Windows and the skills CLI silently writes nothing without it).
-`skills-lock.json` pins sources and hashes; `bunx skills update` refreshes. Skill
+Where they land follows each agent's discovery rules. Cursor, Codex, Copilot and Gemini
+read the shared `.agents/skills/`. Claude Code reads `.claude/skills/` and Windsurf reads
+`.windsurf/skills/`, so those two get a copy. These are real copies, not symlinks, because
+symlinks need Developer Mode on Windows and the skills CLI silently writes nothing without
+it. `skills-lock.json` pins sources and hashes, and `bunx skills update` refreshes them. Skill
 directories are excluded from oxlint/oxfmt/knip so third-party content never breaks
 `bun run check`.
 
-A skill that cannot be fetched — repo renamed, offline — does not fail the run: it is
+A skill that cannot be fetched (repo renamed, offline) does not fail the run. It is
 reported in the manifest (`agentSkills.failed`) and in a warning, and `AGENTS.md` lists
-only what was installed. `--skills` needs at least one agent; `--yes` picks `stack`,
-`--json` installs none unless asked.
+only what was installed. `--skills` needs at least one agent. `--yes` picks `stack`,
+and `--json` installs none unless asked.
 
 ## Requirements
 
@@ -197,7 +197,7 @@ only what was installed. `--skills` needs at least one agent; `--yes` picks `sta
 so `npx create-bunship` works too.
 
 Your chosen stack may need more, because framework CLIs (`nuxt`, `next`, `vite`, `nest`)
-run under **node** via their bin shebang rather than under bun — so the node on your PATH
+run under **node** via their bin shebang rather than under bun, so the node on your PATH
 is what actually builds the generated repo:
 
 | Stack        | Needs        |
