@@ -193,19 +193,24 @@ and `--json` installs none unless asked.
 
 ## Requirements
 
-**Bun ≥ 1.3** on PATH, plus git (unless `--no-git`). The CLI itself runs under Node ≥ 20,
-so `npx create-bunship` works too.
+**Bun ≥ 1.3** on PATH, plus git (unless `--no-git`). The CLI itself needs Node ≥ 22.20,
+so `npx create-bunship` works too. That is the floor of the skills CLI it drives, and
+Node 20 is past end of life.
 
-Your chosen stack may need more, because framework CLIs (`nuxt`, `next`, `vite`, `nest`)
-run under **node** via their bin shebang rather than under bun, so the node on your PATH
-is what actually builds the generated repo:
+Some stacks need node itself, because their framework CLIs (`nuxt`, `next`, `vite`,
+`nest`) run under **node** via their bin shebang rather than under bun. The node on your
+PATH is what actually builds the generated repo:
 
-| Stack        | Needs        |
-| ------------ | ------------ |
-| Nuxt         | Node ≥ 22.19 |
-| React + Vite | Node ≥ 20.19 |
-| Next.js      | Node ≥ 20.9  |
-| NestJS       | Node ≥ 20    |
+| Stack        | Needs          |
+| ------------ | -------------- |
+| Nuxt         | Node ≥ 22.22.3 |
+| React + Vite | Node ≥ 22.20   |
+| Next.js      | Node ≥ 22.20   |
+| NestJS       | Node ≥ 22.20   |
+
+Stacks not in this table are not refused on a machine without node, because Bun stands
+in for node when none is on your PATH. An older node on your PATH still fails the check,
+because its presence switches that stand-in off.
 
 bunship checks this during preflight and fails in about a second with the version it
 found, rather than letting you discover it as an upstream stack trace after a full

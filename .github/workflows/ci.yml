@@ -30,9 +30,11 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.x
+      # Exactly the CLI's floor (CLI_MIN_NODE): proves the bundle builds, and the e2e smoke
+      # passes preflight's node check, on the oldest Node that npx users may run it under.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.20.0
       - run: bun install --frozen-lockfile
       - run: bun run build
       # After build on purpose: the smoke e2e runs `node dist/index.mjs` — the npx path.
