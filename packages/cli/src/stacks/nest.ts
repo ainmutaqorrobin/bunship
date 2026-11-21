@@ -135,6 +135,15 @@ export const nest: StackAdapter = {
       // Filtered against the app's real dependencies before knip.json is written, so
       // entries that a newer Nest drops (ts-loader on 12) don't linger as config hints.
       ignoreDependencies: ['@types/express', 'source-map-support', 'ts-loader'],
+      // @nestjs/cli >=12.0.15 wires @nestjs/observe in with
+      // `export const { ObserveModule, ObserveInstrument } = createObserveModule()`. main.ts
+      // imports the instrument, but ObserveModule is only consumed by AppModule's own
+      // `imports`, so knip fails the generated repo on an unused export. knip's
+      // `ignoreExportsUsedInFile` can't be narrowed to cover it (destructured exports are
+      // typed `unknown`, which the per-kind form skips; only `true` works, and that would
+      // loosen the whole app). Scoping to this one file leaves upstream code untouched, and
+      // knip raises no hint for the entry on older output that has no Observe wiring.
+      ignoreIssues: { 'src/app.module.ts': ['exports'] },
     },
   },
   docker: {
