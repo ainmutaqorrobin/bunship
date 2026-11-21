@@ -71,6 +71,10 @@ export interface StackAdapter {
    * ranges properly would mean taking a semver dependency, and this package ships zero.
    * Floors only ever rise, so a stale value errs toward letting a build through, never
    * toward blocking a setup that works.
+   *
+   * Declaring one also marks the stack as needing a real node on PATH (Bun-only
+   * machines are refused for it). The CLI's own floor, CLI_MIN_NODE, applies on top,
+   * so a value below it only records what upstream asks for.
    */
   minNode?: string;
   /** Materialize appDir by running the official scaffolder (or copying the internal template). */

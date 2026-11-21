@@ -47,12 +47,12 @@
   "devDependencies": {
     "@clack/prompts": "^1.7.0",
     "@types/bun": "^1.3.14",
-    "@types/node": "^20",
+    "@types/node": "^22",
     "commander": "^14.0.0",
     "tsdown": "^0.22.9",
     "unrun": "^0.3.1"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.20.0"
   }
 }

@@ -23,9 +23,9 @@ jobs:
         with:
           bun-version: 1.3.x
       # Framework CLIs (nuxt, next, …) run under node via their bin shebang, not
-      # under bun — so this is the node that builds the generated repo. Nuxt 4.5
-      # dropped Node 20 (engines: ^22.19 || ^24.11 || >=26), hence 22, not the 20
-      # floor that ci.yml pins to prove the CLI stays npx-compatible.
+      # under bun — so this is the node that builds the generated repo. Nuxt 4.6
+      # needs more than the CLI floor (engines: ^22.22.3 || ^24.15 || >=26), hence the
+      # latest 22, not the 22.20.0 floor that ci.yml pins to prove npx compatibility.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -66,9 +66,9 @@ jobs:
         with:
           bun-version: 1.3.x
       # Framework CLIs (nuxt, next, …) run under node via their bin shebang, not
-      # under bun — so this is the node that builds the generated repo. Nuxt 4.5
-      # dropped Node 20 (engines: ^22.19 || ^24.11 || >=26), hence 22, not the 20
-      # floor that ci.yml pins to prove the CLI stays npx-compatible.
+      # under bun — so this is the node that builds the generated repo. Nuxt 4.6
+      # needs more than the CLI floor (engines: ^22.22.3 || ^24.15 || >=26), hence the
+      # latest 22, not the 22.20.0 floor that ci.yml pins to prove npx compatibility.
       - uses: actions/setup-node@v4
         with:
           node-version: 22

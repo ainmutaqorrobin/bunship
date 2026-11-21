@@ -106,10 +106,15 @@ tolerates plausible upstream variants, and verify the generated repo actually pa
 
 ### Node vs Bun is a real distinction here
 
-The CLI itself runs under Node ≥ 20 (so `npx create-bunship` works), but framework CLIs (`next`,
-`nuxt`, `vite`, `nest`) execute under **node via their bin shebang, not under bun** — so the node
-on PATH is what actually builds the generated repo. Adapters declare `minNode` floors and
-`preflight` fails fast with the version it found. Floors are plain minimums rather than upstream
+The CLI itself needs Node ≥ 22.20 (`CLI_MIN_NODE` in `stacks/registry.ts`, mirrored in
+`engines` by a unit test and pinned exactly in `ci.yml`). That is the skills CLI's floor, and
+Node 20 is EOL. Framework CLIs (`next`, `nuxt`, `vite`, `nest`) execute under **node via their
+bin shebang, not under bun**, so the node on PATH is what actually builds the generated repo.
+Adapters declare `minNode` floors that can only raise the CLI's, and `preflight` fails fast
+with the version it found. A _missing_ node is fatal only when a selected adapter declares
+`minNode`: `bun run` aliases `node` to bun when none is on PATH, so Bun-only machines still work
+for floorless stacks. An _old_ node is always fatal, because its presence switches that alias
+off. Floors are plain minimums rather than upstream
 semver ranges on purpose: this package ships **zero runtime dependencies** (tsdown bundles
 everything via `deps.alwaysBundle`), so there's no semver library to lean on.
 

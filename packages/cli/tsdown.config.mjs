@@ -6,7 +6,7 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: 'esm',
   platform: 'node',
-  target: 'node20',
+  target: 'node22',
   dts: false,
   minify: false,
   // Bundle every dependency: the published package has zero runtime deps.

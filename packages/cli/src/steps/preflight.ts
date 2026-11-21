@@ -1,7 +1,7 @@
 import { ScaffoldError, UsageError } from '../errors';
 import { exec } from '../exec';
 import { dirState } from '../fsx';
-import { meetsMinVersion, nodeFloor } from '../stacks/registry';
+import { meetsMinVersion, nodeBoundStack, nodeFloor } from '../stacks/registry';
 import type { Step } from './types';
 
 export const preflight: Step = {
@@ -37,36 +37,39 @@ export const preflight: Step = {
       });
     }
 
-    // Framework CLIs (nuxt, next, vite, nest) run under `node` via their bin shebang,
-    // so the node on PATH — not bun — decides whether the generated repo can build.
-    // Checked here so an unsupported Node fails in a second, rather than surfacing as
-    // an upstream stack trace after a multi-minute install.
+    // Framework CLIs (nuxt, next, vite, nest) and the skills CLI run under `node` via
+    // their bin shebang, so the node on PATH — not bun — decides whether the generated
+    // repo can build. Checked here so an unsupported Node fails in a second, rather than
+    // surfacing as an upstream stack trace after a multi-minute install.
+    //
+    // A MISSING node is only fatal for stacks that declare a floor: `bun run` aliases
+    // `node` to bun when none is on PATH, so stacks without a floor still run on Bun-only
+    // machines. An OLD node is always fatal, because its presence switches that alias off.
     const floor = nodeFloor(rc.cfg);
-    if (floor) {
-      task.update('node');
-      let nodeVersion: string;
-      try {
-        nodeVersion = (await exec('node', ['--version'], { cwd: process.cwd() })).stdout
-          .trim()
-          .replace(/^v/, '');
-      } catch {
+    task.update('node');
+    let nodeVersion: string | null = null;
+    try {
+      nodeVersion = (await exec('node', ['--version'], { cwd: process.cwd() })).stdout
+        .trim()
+        .replace(/^v/, '');
+    } catch {
+      const bound = nodeBoundStack(rc.cfg);
+      if (bound) {
         throw new ScaffoldError(
-          `node was not found on PATH, but ${floor.label} needs Node >= ${floor.min}.`,
-          {
-            step: 'preflight',
-            hint: `${floor.label} runs its CLI under node, not bun. Install Node >= ${floor.min}: https://nodejs.org`,
-          },
+          `node was not found on PATH, but ${bound} runs its CLI under node, not bun.`,
+          { step: 'preflight', hint: `Install Node >= ${floor.min}: https://nodejs.org` },
         );
       }
-      if (!meetsMinVersion(nodeVersion, floor.min)) {
-        throw new ScaffoldError(
-          `Node ${nodeVersion} is too old — ${floor.label} needs Node >= ${floor.min}.`,
-          {
-            step: 'preflight',
-            hint: `Upgrade Node (e.g. \`nvm install ${floor.min.split('.')[0]}\`), or choose a stack with a lower floor.`,
-          },
-        );
-      }
+    }
+    if (nodeVersion !== null && !meetsMinVersion(nodeVersion, floor.min)) {
+      const lowerStack = floor.source === 'stack' ? ', or choose a stack with a lower floor' : '';
+      throw new ScaffoldError(
+        `Node ${nodeVersion} is too old — ${floor.label} needs Node >= ${floor.min}.`,
+        {
+          step: 'preflight',
+          hint: `Upgrade Node (e.g. \`nvm install ${floor.min.split('.')[0]}\`)${lowerStack}.`,
+        },
+      );
     }
 
     if (rc.cfg.git) {

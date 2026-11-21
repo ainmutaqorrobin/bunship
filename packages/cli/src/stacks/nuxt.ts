@@ -14,7 +14,8 @@ export const nuxt: StackAdapter = {
   dirName: 'web',
   devPort: 3000,
   scaffolderPin: PIN,
-  minNode: '22.19.0',
+  // Nuxt 4.6 engines: ^22.22.3 || ^24.15.0 || >=26.0.0.
+  minNode: '22.22.3',
   async scaffold(ctx) {
     // --template is REQUIRED in non-interactive terminals ("minimal" = Nuxt 4 starter).
     await exec(
